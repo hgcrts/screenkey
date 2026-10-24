@@ -26,5 +26,10 @@ fi
 echo "[pre-commit] pyflakes ..."
 "$PY" -m pyflakes src tests tools
 
+if [ "${DANMAKU_SKIP_TESTS:-0}" = "1" ]; then
+    echo "[pre-commit] 跳过 pytest（DANMAKU_SKIP_TESTS=1）" >&2
+    exit 0
+fi
+
 echo "[pre-commit] pytest ..."
 "$PY" -m pytest -q
