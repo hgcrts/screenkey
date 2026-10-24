@@ -58,3 +58,6 @@ userdata/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 发布产物（打包好的 zip，交由 GitHub Release 附件分发）
+/release/

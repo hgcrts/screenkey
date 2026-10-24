@@ -1,0 +1,32 @@
+MIT License
+
+Copyright (c) 2026 弹幕键盘 V2 作者 / Danmaku Keyboard V2 authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+第三方代码声明 / Third-party notice
+
+src/danmaku_kb/data/sign.js 是第三方、已混淆的抖音 SDK 代码（copyright 属于抖音 / ByteDance），
+随包携带仅用于研究学习，不适用上面的 MIT 许可，请勿商用或二次分发。
+The file src/danmaku_kb/data/sign.js is third-party obfuscated Douyin SDK code
+(copyright belongs to Douyin / ByteDance). It is bundled for research and study
+only, is NOT covered by the MIT license above, and must not be used commercially
+or redistributed.
