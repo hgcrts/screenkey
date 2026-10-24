@@ -599,20 +599,22 @@ class BilibiliFetcher(DanmakuFetcher):
             # aiohttp 3.14.4 传 2 个），于是整个响应解码失败：
             # ``ClientPayloadError: 400, message: Can not decode content-encoding: br``。
             # 抖音抓取器早就为此显式声明过头，B 站这条路径当时漏了。
+            #
+            # SESSDATA 放在**会话级 Cookie 请求头**里（见 ``_session_headers``），
+            # 不能只塞 cookie jar —— 那样得到的是 host-only cookie，只发给
+            # live.bilibili.com，nav 自检（api.bilibili.com）和弹幕 WebSocket
+            # （tx-*.chat.bilibili.com）都收不到，结果就是"明明登录了却显示掩码昵称"。
             self._session = aiohttp.ClientSession(
-                headers={"Accept-Encoding": "gzip, deflate"},
+                headers=_session_headers(self.sessdata),
                 # 只限制建连阶段：长连接的 ws 会一直挂着，设 ``total`` 会在
                 # 若干秒后把好好的弹幕连接掐断（这里不能图省事写 total=10）。
                 timeout=aiohttp.ClientTimeout(total=None, sock_connect=10),
             )
-
-            # 把 SESSDATA 塞进 cookie jar，blivedm 建立长连接时会带上
             if self.sessdata:
-                self._session.cookie_jar.update_cookies(
-                    {"SESSDATA": self.sessdata},
-                    response_url=_yarl_url("https://live.bilibili.com"),
+                logger.info(
+                    "已设置 SESSDATA（长度 %d），随所有请求（含 WS 握手）发送",
+                    len(self.sessdata),
                 )
-                logger.info("已设置 SESSDATA（长度 %d）", len(self.sessdata))
             else:
                 logger.info("未提供 SESSDATA，以游客身份连接（只能收弹幕，无法发言）")
 
@@ -923,6 +925,11 @@ async def _probe_login_mid(session: Any) -> int:
     所以连接前必须先确认登录态，并把 ``mid`` 作为 ``uid`` 交给 blivedm
     的 WS 鉴权包；同时把"cookie 失效"明确告诉用户——他们几乎都以为
     自己"已经扫码登录过了"。
+
+    注意：光有 mid 还不够。2026-10-24 查明，"登录了仍掩码"还有一层原因——
+    SESSDATA 原先只进 cookie jar（host-only，只发给 live.bilibili.com），
+    WS 主机与 ``api.bilibili.com`` 都收不到，自检恒返回 0。现在 SESSDATA
+    由 ``_session_headers`` 放进会话级请求头，本函数才能真正看到登录态。
     """
     try:
         async with session.get(
@@ -946,18 +953,28 @@ async def _probe_login_mid(session: Any) -> int:
         return 0
 
 
-def _yarl_url(url: str) -> Any:
-    """构造 aiohttp 需要的 URL 对象。
+def _session_headers(sessdata: str) -> Dict[str, str]:
+    """构造会话级请求头。
 
-    aiohttp 3.x 的 ``cookie_jar.update_cookies`` 第二参数要求 ``yarl.URL``；
-    某些版本也接受字符串。这里做一次兼容尝试。
+    **为什么不用 cookie jar**：``cookie_jar.update_cookies(..., response_url=...)``
+    装进去的是 host-only cookie，只会发给那个域名。B 站这条链路上有三个域名：
+
+    * ``api.bilibili.com`` —— nav 登录态自检；
+    * ``live.bilibili.com`` —— 房间信息；
+    * ``tx-*.chat.bilibili.com`` 等 —— 弹幕 WebSocket 的实际主机。
+
+    host-only cookie 只覆盖第二个，于是自检永远判定"未登录"、WS 鉴权包里也
+    没有 SESSDATA，服务端按游客下发 ``uid=0`` 与「伊***」掩码昵称。
+    2026-10-24 实测：扫码拿到的新 SESSDATA 用 nav 直连返回 ``mid=1285171452``，
+    而经 cookie jar 注入的会话里 nav 返回 ``-101``，证实了这一点。
+
+    改成会话级 ``Cookie`` 请求头后，aiohttp 会把它合并进**每一个**请求的头部
+    （包括 ``ws_connect`` 的握手），与域名无关。
     """
-    try:  # pragma: no cover - 依赖环境
-        from yarl import URL
-
-        return URL(url)
-    except Exception:  # pragma: no cover
-        return url
+    headers = {"Accept-Encoding": "gzip, deflate"}
+    if sessdata:
+        headers["Cookie"] = f"SESSDATA={sessdata}"
+    return headers
 
 
 __all__ = ["AIOHTTP_AVAILABLE", "BLIVEDM_AVAILABLE", "BilibiliFetcher"]

@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import inspect
 import re
 from pathlib import Path
@@ -660,6 +661,44 @@ class TestLoginStateProbe:
         assert warn_at != -1, "connect() 没有对失效 Cookie 发出任何提示"
         assert probe_at < warn_at, "提示必须出现在登录态探测之后"
         assert "掩码" in src or "游客" in src
+
+
+class TestSessionCookieHeader:
+    """2026-10-24：SESSDATA 必须走**会话级请求头**，否则昵称仍是掩码。
+
+    背景：``cookie_jar.update_cookies(..., response_url=live.bilibili.com)``
+    装的是 host-only cookie，只发给 live.bilibili.com；nav 自检走的
+    api.bilibili.com 与弹幕 WebSocket 走的 tx-*.chat.bilibili.com 都拿不到，
+    于是"登录了也按游客下发掩码昵称"。实测新 SESSDATA（nav 直连 mid 有效）
+    通过 cookie jar 注入后，同一会话里 nav 仍返回 -101。
+    """
+
+    def test_cookie_header_when_sessdata_present(self, module):
+        headers = module._session_headers("abc%2Cdef")
+        assert headers["Cookie"] == "SESSDATA=abc%2Cdef"
+        assert headers["Accept-Encoding"] == "gzip, deflate"
+
+    def test_no_cookie_header_for_guest(self, module):
+        assert "Cookie" not in module._session_headers("")
+
+    def test_connect_uses_session_headers_not_cookie_jar(self, module):
+        src = inspect.getsource(module.BilibiliFetcher.connect)
+        assert "_session_headers" in src, "connect() 没有用会话级请求头装 SESSDATA"
+        assert "update_cookies" not in src, "cookie jar 装的是 host-only cookie，别退回去"
+
+    def test_session_header_reaches_all_hosts(self, module):
+        """真实 aiohttp 会话：默认头里带 Cookie，且与目标域名无关。"""
+        aiohttp = importlib.import_module("aiohttp")
+
+        async def _defaults():
+            session = aiohttp.ClientSession(headers=module._session_headers("X%2CY"))
+            try:
+                return dict(session._default_headers)
+            finally:
+                await session.close()
+
+        headers = asyncio.run(_defaults())
+        assert headers.get("Cookie") == "SESSDATA=X%2CY"
 
 
 # ----------------------------------------------------------------------
