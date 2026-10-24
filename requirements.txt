@@ -1,0 +1,32 @@
+# 弹幕键盘 V2 依赖
+#
+# 分三档：核心（必须）、弹幕后端（B站/抖音）、开发测试。
+# PyQt5 在 Windows 上有官方预编译 wheel，但注意 blivedm 锁定的 brotli 1.0.9
+# 在 Python 3.12 上没有 wheel（最高只到 cp311），需要本地编译，见 README「安装」。
+
+# ---------- 核心 ----------
+PyQt5>=5.15.0            # 界面
+pynput>=1.7.0            # 全局热键监听
+requests>=2.28.0         # 扫码登录 / 页面抓取
+segno>=1.6.0             # 二维码 PNG（纯 Python，无 Qt 依赖）
+
+# ---------- 弹幕后端 ----------
+websockets>=10.0         # 抖音弹幕 WebSocket
+aiohttp>=3.8.0           # B站 blivedm 的 HTTP/WS 会话
+blivedm>=0.1.1           # B站直播弹幕协议实现（PyPI 上只有 0.1.0 / 0.1.1，勿写 0.2+）
+# 注：抖音弹幕协议由本项目的 danmaku/protobuf_lite.py 手写解析，
+#     刻意不依赖 protobuf 编译器，故不需要 grpcio-tools / protoc。
+#
+# 为什么不需要 betterproto：
+#   参考项目的 requirements 里写了 ``betterproto>=2.0.0b1`` 并注明"blivedm 依赖"，
+#   但实测 blivedm 0.1.1 的 requires_dist 只有 ``['aiohttp (>=3.7.4)', 'brotli (==1.0.9)']``，
+#   其三个模块的 import 也只有 asyncio/enum/json/logging/ssl/struct/typing/aiohttp/brotli/dataclasses，
+#   既不声明也不使用 betterproto（本项目实测环境下没有任何已安装包要求它）。
+#   所以这里刻意不写它，少一个依赖少一个坑。
+
+# ---------- 开发测试 ----------
+pytest>=7.0.0
+
+# ---------- 可选 ----------
+# playwright>=1.40.0     # 抖音 browser 模式（需另跑 playwright install chromium）
+# pyautogui>=0.9.54      # 备用的键鼠后端（默认不用）

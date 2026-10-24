@@ -1,0 +1,60 @@
+# ---------------- 虚拟环境 ----------------
+.venv/
+venv/
+env/
+ENV/
+
+# ---------------- 打包产物 ----------------
+build/
+dist/
+*.spec.bak
+*.manifest
+*.pkg
+
+# ---------------- Python 缓存与编译产物 ----------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.egg
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+MANIFEST
+
+# ---------------- 测试与类型检查缓存 ----------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+pytest-cache-files-*/
+.test_tmp/
+.pytest_tmp/
+_probe*/
+/tmp*/
+tmp*/
+
+# ---------------- 本地配置 / 运行期数据 ----------------
+# 配置与日志默认写在 ~/.danmaku_kb/，不在仓库里；下面是便携模式跑出来的副本
+# （默认可写目录探测失败时会回落到「程序旁边的 .danmaku_kb」，见 config/manager.py）
+.danmaku_kb/
+settings.json
+settings.json.bad
+*.log
+logs/
+userdata/
+
+# ---------------- 编辑器 / 操作系统 ----------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+Thumbs.db
+desktop.ini
+.DS_Store
