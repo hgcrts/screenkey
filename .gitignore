@@ -61,3 +61,7 @@ desktop.ini
 
 # 发布产物（打包好的 zip，交由 GitHub Release 附件分发）
 /release/
+
+# 误提交的杂物（历史上提交过一份含 ttwid 的日志）
+新建文本文档.txt
+*.log
