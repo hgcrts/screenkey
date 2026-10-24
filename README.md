@@ -42,6 +42,8 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 2. **绑定按键**：在「按键映射」里写关键词 → 对应键
 3. **点「开始」**：弹幕一来就注入
 
+完整的界面说明、每个设置项的含义、连不上的排查，见 **[使用手册](docs/使用手册.md)**。
+
 > 往游戏里注入按键需要管理员权限；第一次跑建议先开「模拟模式」验证映射。
 
 ## 环境要求
@@ -57,6 +59,7 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 
 | 想知道 | 看这里 |
 | --- | --- |
+| **怎么用**（安装、连接直播间、映射、筛选、FAQ） | **[docs/使用手册.md](docs/使用手册.md)** |
 | 现在到底能做什么、验证到什么程度 | [docs/项目现状.md](docs/项目现状.md) |
 | 代码怎么分层、线程怎么跑 | [docs/架构.md](docs/架构.md) |
 | 安装细节、CLI、配置项、测试怎么跑 | [docs/开发文档.md](docs/开发文档.md) |
