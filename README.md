@@ -105,7 +105,7 @@
 | 能力 | 说明 |
 | --- | --- |
 | **真抖音实时弹幕** | WebSocket + 手写 protobuf 解析 + 本机 Node 常驻进程计算 `signature`。**不是模拟**，实测已抓到真实弹幕。需要本机安装 Node.js。 |
-| **B站弹幕** | 基于 `blivedm` + **自实现 WBI 签名**（`danmaku/bilibili_wbi.py`），支持扫码登录（`login/bilibili_qr.py`）。**实测已抓到真实弹幕**（房间 `34348`，30 秒 41 条）。历史上困扰项目的 `-352` 不是出口 IP 风控，而是 `getDanmuInfo` 缺 WBI 签名，签名补齐后即通。 |
+| **B站弹幕** | 基于 `blivedm` + **自实现 WBI 签名**（`danmaku/bilibili_wbi.py`），支持扫码登录（`login/bilibili_qr.py`）。**实测已抓到真实弹幕**（房间 `34348`，30 秒 41 条）。历史上困扰项目的 `-352` 不是出口 IP 风控，而是 `getDanmuInfo` 缺 WBI 签名，签名补齐后即通。**进场/关注**自己解 `INTERACT_WORD_V2`（blivedm 0.1.1 只认旧版 `INTERACT_WORD`），**在线人数**取 `ONLINE_RANK_COUNT` 与 `WATCHED_CHANGE`。 |
 | **规则化弹幕筛选** | 有序规则列表，**第一条命中即生效**；支持 ALLOW / DROP / DISPLAY_ONLY / REWRITE 四种动作。 |
 | **按键映射** | 键盘与鼠标两套映射；精确 / 包含 / 前缀 / 正则 / 感应（重复字符长按）五种匹配模式；长按动作可设按住时长；按键列是可搜索下拉。 |
 | **游戏模式** | 用扫描码（DirectInput）绕过游戏对 `SendInput` 的屏蔽。 |
@@ -1627,6 +1627,8 @@ cd /d E:\DSHwork\弹幕键盘V2\src
    `_init_room_id_and_owner`（改用 `room_init?id=<房间号>`，`?room_id=` 会得到 `60004` 或 `-352`）
    与 `_init_host_server`（改用签名 `getDanmuInfo`）替换掉。
    **实测**：房间 `34348`，抓取器与引擎级各 30 秒各收到 **41 条**事件，引擎触发 9 次动作。
+   2026-10-24 又在房间 `21414905` 复验 45 秒：`status=True` 上报、收到 `enter`（`INTERACT_WORD_V2`）
+   与在线人数 STATS（`在线 71~77 人`、`看过 1.3万`），证明 V2 分支与 STATS 分支在真实链路上生效。
    诊断层 `_diagnose_ws_failure` 仍保留：签名后**仍**报 `-352` 才是真的风控，
    那时才需要换网络出口（文案已改为"请求已带 WBI 签名仍被拒"）。
    取证原文与当年误判过程见[如何验证真的连上了](#如何验证真的连上了)第 5 节。
@@ -1962,6 +1964,16 @@ warning 不混进错误信号、启动时界面就说出来、`--check-env` 永�
 （`press_and_release` / `click` / `scroll_up`），中文界面里很突兀；现在总表与编辑器的下拉
 共用 `ui/mapping_editor.py::action_label()` 这一份中文文案，长按照旧带时长（`长按 1.25s`）。测试数到 **982 passed**。
 
+2026-10-24 做了一轮「完善度审计」后补的四件事（都是为了能安全地交给别人 / 上 GitHub）：
+凭据落盘改用 **Windows DPAPI 加密**（`config/secrets.py`，非 Windows 或解密失败自动回落明文，
+读得懂旧配置、写得出新配置）；仓库初始化 **git** 并做了首次提交；补 `constraints.txt`
+（实测通过的版本快照，`pip install -r requirements.txt -c constraints.txt` 可复现）与
+`pyproject.toml`（只放 pytest 配置，项目本身不打成 pip 包）；加 `.githooks/pre-commit`
+（pyflakes + 全量离线测试，`git config core.hooksPath .githooks` 启用）。
+同一轮还补了 B站 `INTERACT_WORD_V2` / 在线人数解析（见上面「一」末尾的补充块）。
+测试数到 **1058 passed + 7 skipped**（另有 25 个要起子进程的用例，在受限沙箱里会以
+`WinError 5` 失败，正常桌面环境应全绿）。
+
 ### 一、B站弹幕以前 100% 连不上（最严重）
 
 三个缺陷叠在一起，任何一个都足以让 B站这条路走不通：
@@ -1985,6 +1997,16 @@ warning 不混进错误信号、启动时界面就说出来、`--check-env` 永�
 > 顺带把两条**死代码**就活了：`blivedm` 0.1.1 把 `INTERACT_WORD` 放进了 `IGNORED_CMDS`、
 > `LIKE` 根本不在它的回调表里，所以子类里那两个 `_on_interact_word` / `_on_like` 永远不会被调用。
 > 现在自己覆写 `handle()` 解析命令名再分派（含 `LIKE_INFO*`），进入直播间 / 点赞事件真的能进来了。
+
+> **2026-10-24 补的第三个协议分支**：B站把进场事件升级成了 `INTERACT_WORD_V2`（载荷是
+> base64 的 protobuf，放在 `data.pb`），而 blivedm 0.1.1 只认识旧的 JSON 版 `INTERACT_WORD`，
+> 于是进场/关注又整批丢了（日志里只剩 `unknown cmd=INTERACT_WORD_V2`）。
+> 现在用项目自带的 `danmaku/protobuf_lite.py` 手解 V2 载荷（字段号按真实抓包取证：
+> `1=uid 2=uname 5=msg_type 6=room_id 7/8=时间戳`），同时补了 `ONLINE_RANK_COUNT`
+> （当前在线人数）与 `WATCHED_CHANGE`（累计观看，如 `看过 1.3万`）两个 STATS 分支；
+> 同值统计 15~60 秒内去重，避免 5 秒一推把弹幕列表刷屏。
+> 离线测试见 `tests/test_bilibili.py::TestInteractWordV2AndStats`（fixture 在 `tests/fixtures/bilibili_frames.json`，
+> 按真实抓包结构重新编码、已匿名化）。
 
 ### 二、抖音：连接状态与心跳
 
