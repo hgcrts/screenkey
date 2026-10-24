@@ -10,6 +10,14 @@ WebSocket danmaku protocol (not a mock, not page polling); the Bilibili path is 
 `blivedm` with a self-implemented WBI request signer so that the signed `getDanmuInfo`
 endpoint actually answers instead of returning `-352`.
 
+## Download
+
+Don't want to install Python? Grab the packaged build (Windows 10/11 x64, no installation):
+
+**[⬇ Download DanmakuKeyboard-V2.1.0-win64.zip](https://github.com/hgcrts/danmaku-keyboard-v2/releases/latest)** (42.7 MiB — unzip and run `弹幕键盘V2.exe`; the SHA-256 lives in `SHA256SUMS.txt` on the release page.)
+
+To run from source or hack on the code, see [Install (from source)](#install-from-source).
+
 > This document describes behaviour that exists in the code. Anything unverified or
 > limited is stated as such — there is no marketing copy here.
 > Version `2.1.0`. **Windows only.**
@@ -152,7 +160,8 @@ Credentials (Bilibili SESSDATA, Douyin cookie) are stored **DPAPI-encrypted** on
 | Douyin login | Cookie import only — the platform returns `error_code: 4031` to pure HTTP clients, so QR login is not implementable without a browser automation dependency. |
 
 **1094 offline tests** (`pytest tests -q`, ~15 s, no network, no GUI, no real key events),
-`pyflakes` clean, `--selftest` green.
+`pyflakes` clean, `--selftest` green. On a normal desktop 1058 pass and 7 skip; the
+remaining 25 spawn child processes and fail inside restricted sandboxes.
 
 ---
 
