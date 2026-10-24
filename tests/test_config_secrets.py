@@ -11,9 +11,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from danmaku_kb.config import secrets as S  # noqa: E402
-from danmaku_kb.config.manager import ConfigManager  # noqa: E402
-from danmaku_kb.config.models import AppConfig  # noqa: E402
+from screenkey.config import secrets as S  # noqa: E402
+from screenkey.config.manager import ConfigManager  # noqa: E402
+from screenkey.config.models import AppConfig  # noqa: E402
 
 
 class TestSecretsModule:

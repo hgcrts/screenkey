@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from danmaku_kb.input.mappings import (
+from screenkey.input.mappings import (
     InputType,
     KeyAction,
     KeyMapping,

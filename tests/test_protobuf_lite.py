@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from danmaku_kb.danmaku.protobuf_lite import (
+from screenkey.danmaku.protobuf_lite import (
     ProtobufError,
     encode_field_bytes,
     encode_field_string,
@@ -141,7 +141,7 @@ class TestDouyinEnvelope:
         return data
 
     def test_push_frame_roundtrip(self):
-        from danmaku_kb.danmaku.douyin import parse_push_frame
+        from screenkey.danmaku.douyin import parse_push_frame
 
         frame = self._push_frame(b"inner", log_id=12345)
         parsed = parse_push_frame(frame)
@@ -151,7 +151,7 @@ class TestDouyinEnvelope:
         assert parsed["log_id"] == 12345
 
     def test_response_with_messages(self):
-        from danmaku_kb.danmaku.douyin import parse_response
+        from screenkey.danmaku.douyin import parse_response
 
         msg1 = encode_field_string(1, "WebcastChatMessage")
         msg2 = encode_field_string(1, "WebcastGiftMessage")
@@ -171,7 +171,7 @@ class TestDouyinEnvelope:
         assert parsed["need_ack"] is True
 
     def test_build_ack_has_type_and_payload(self):
-        from danmaku_kb.danmaku.douyin import build_ack, parse_push_frame
+        from screenkey.danmaku.douyin import build_ack, parse_push_frame
 
         ack = build_ack("internal_src:pushserver|seq:1", log_id=999)
         parsed = parse_push_frame(ack)
@@ -182,13 +182,13 @@ class TestDouyinEnvelope:
     def test_gzip_payload_decoded(self):
         import gzip as gz
 
-        from danmaku_kb.danmaku.douyin import decode_payload
+        from screenkey.danmaku.douyin import decode_payload
 
         raw = encode_field_string(1, "hello")
         assert decode_payload(gz.compress(raw), "gzip") == raw
 
     def test_uncompressed_payload_passthrough(self):
-        from danmaku_kb.danmaku.douyin import decode_payload
+        from screenkey.danmaku.douyin import decode_payload
 
         # 服务端并非所有帧都压缩，解压失败必须回落原样返回
         assert decode_payload(b"\x0a\x01x", "gzip") == b"\x0a\x01x"

@@ -23,20 +23,20 @@ from pathlib import Path
 import pytest
 
 BILIBILI_PY = (
-    Path(__file__).resolve().parents[1] / "src" / "danmaku_kb" / "danmaku" / "bilibili.py"
+    Path(__file__).resolve().parents[1] / "src" / "screenkey" / "danmaku" / "bilibili.py"
 )
 
 
 @pytest.fixture(scope="module")
 def wbi():
-    from danmaku_kb.danmaku import bilibili_wbi
+    from screenkey.danmaku import bilibili_wbi
 
     return bilibili_wbi
 
 
 @pytest.fixture(scope="module")
 def module():
-    from danmaku_kb.danmaku import bilibili
+    from screenkey.danmaku import bilibili
 
     return bilibili
 

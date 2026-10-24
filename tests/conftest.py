@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-# 让测试无需安装即可 import danmaku_kb
+# 让测试无需安装即可 import screenkey
 SRC = Path(__file__).resolve().parents[1] / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
@@ -174,7 +174,7 @@ def config_dir(tmp_path):
 
 @pytest.fixture
 def manager(config_dir):
-    from danmaku_kb.config.manager import ConfigManager
+    from screenkey.config.manager import ConfigManager
 
     return ConfigManager(config_dir=config_dir, auto_save=False)
 
@@ -183,9 +183,9 @@ def manager(config_dir):
 def engine():
     """dry_run 引擎：跑完整逻辑但不真的发按键。"""
 
-    from danmaku_kb.engine import DanmakuKeyboardEngine
+    from screenkey.engine import ScreenKeyEngine
 
-    eng = DanmakuKeyboardEngine()
+    eng = ScreenKeyEngine()
     eng.dry_run = True
     return eng
 
@@ -194,7 +194,7 @@ def engine():
 def simulator():
     """模拟抓取器。"""
 
-    from danmaku_kb.danmaku.simulator import SimulatorFetcher
+    from screenkey.danmaku.simulator import SimulatorFetcher
 
     return SimulatorFetcher(interval=0.01)
 
@@ -203,7 +203,7 @@ def simulator():
 def chat():
     """构造一条普通弹幕的工厂。"""
 
-    from danmaku_kb.danmaku.message import DanmakuMessage, MessageType
+    from screenkey.danmaku.message import DanmakuMessage, MessageType
 
     def _make(content: str, nickname: str = "测试用户", user_id: int = 1, **kwargs):
         return DanmakuMessage(

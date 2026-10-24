@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import json
 
-from danmaku_kb.config.manager import ConfigManager
-from danmaku_kb.filters.rules import (
+from screenkey.config.manager import ConfigManager
+from screenkey.filters.rules import (
     CompareOp,
     Condition,
     FieldMatch,
@@ -79,7 +79,7 @@ class TestFilterPersistence:
         assert rule.description == "测试用"
         # 构造时故意塞字符串（界面/手改 JSON 都可能这样），序列化不能炸，
         # 反序列化后应被规整成 MessageType 枚举
-        from danmaku_kb.danmaku.message import MessageType
+        from screenkey.danmaku.message import MessageType
 
         assert rule.msg_types == [MessageType.DANMAKU]
         assert set(rule.platforms) == {"bilibili", "douyin"}
@@ -164,7 +164,7 @@ class TestFilterPersistence:
         again = ConfigManager(config_dir=tmp_path / "cfg", auto_save=False)
         again.load()
         engine = FilterEngine(rules=again.filters)
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         blocked = engine.evaluate(DanmakuMessage(content="快来加群", nickname="u", user_id="1"))
         assert blocked.dropped is True
@@ -191,7 +191,7 @@ class TestHitCountKeys:
                 ),
             ]
         )
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         engine.evaluate(DanmakuMessage(content="a", nickname="u", user_id="1"))
         engine.evaluate(DanmakuMessage(content="b", nickname="u", user_id="1"))
@@ -210,7 +210,7 @@ class TestHitCountKeys:
                 )
             ]
         )
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         engine.evaluate(DanmakuMessage(content="x", nickname="u", user_id="1"))
         assert engine.hit_counts == {"挡": 1}
@@ -225,7 +225,7 @@ class TestHitCountKeys:
                 )
             ]
         )
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         result = engine.evaluate(DanmakuMessage(content="x", nickname="u", user_id="1"))
         assert result.rule == "rule@0"

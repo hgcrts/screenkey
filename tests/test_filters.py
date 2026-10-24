@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import pytest
 
-from danmaku_kb.danmaku.message import DanmakuMessage, MessageType
-from danmaku_kb.filters.rules import (
+from screenkey.danmaku.message import DanmakuMessage, MessageType
+from screenkey.filters.rules import (
     CompareOp,
     Condition,
     FieldMatch,

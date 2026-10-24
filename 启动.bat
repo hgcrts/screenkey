@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 
 REM ============================================================
-REM  弹幕键盘 V2 —— 一键启动
+REM  幕键 —— 一键启动
 REM
 REM  用法:
 REM    启动.bat              启动图形界面，不弹控制台窗口
@@ -18,7 +18,7 @@ chcp 936 >nul
 
 set "ROOT=%~dp0"
 set "SRC=%ROOT%src"
-set "ENTRY=%SRC%\danmaku_kb\main.py"
+set "ENTRY=%SRC%\screenkey\main.py"
 set "VENV_PY=%ROOT%.venv\Scripts\python.exe"
 set "VENV_PYW=%ROOT%.venv\Scripts\pythonw.exe"
 
@@ -28,7 +28,7 @@ if /i "%~1"=="--selftest" set "MODE=selftest"
 if /i "%~1"=="--check-env" set "MODE=checkenv"
 
 echo ============================================
-echo    弹幕键盘 V2
+echo    幕键
 echo ============================================
 echo.
 

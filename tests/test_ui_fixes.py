@@ -38,7 +38,7 @@ def qt():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE, "PyQt5 已装但探测为不可用，qt_env 的探测逻辑有问题"
     configure_qt_environment()
@@ -51,7 +51,7 @@ def qt():
 
 @pytest.fixture
 def isolated_manager(qt, tmp_path):
-    from danmaku_kb.config.manager import ConfigManager
+    from screenkey.config.manager import ConfigManager
 
     manager = ConfigManager(config_dir=tmp_path / "cfg", auto_save=False)
     manager.load()
@@ -60,7 +60,7 @@ def isolated_manager(qt, tmp_path):
 
 @pytest.fixture
 def window(qt, isolated_manager):
-    from danmaku_kb.ui.main_window import MainWindow
+    from screenkey.ui.main_window import MainWindow
 
     win = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
     yield win
@@ -70,8 +70,8 @@ def window(qt, isolated_manager):
 # ===================================================================== 弹幕窗口
 class TestDanmakuWindowDisplayOptions:
     def test_toggle_writes_back_to_config_and_emits(self, qt):
-        from danmaku_kb.config.models import DisplayConfig
-        from danmaku_kb.ui.danmaku_window import DanmakuWindow
+        from screenkey.config.models import DisplayConfig
+        from screenkey.ui.danmaku_window import DanmakuWindow
 
         win = DanmakuWindow(DisplayConfig(only_triggered=False, auto_scroll=True))
         try:
@@ -93,8 +93,8 @@ class TestDanmakuWindowDisplayOptions:
         否则用户改字号 → ``apply_config`` → ``setChecked`` → ``toggled`` →
         ``configChanged``，等于自己触发一次"用户改了选项"。
         """
-        from danmaku_kb.config.models import DisplayConfig
-        from danmaku_kb.ui.danmaku_window import DanmakuWindow
+        from screenkey.config.models import DisplayConfig
+        from screenkey.ui.danmaku_window import DanmakuWindow
 
         win = DanmakuWindow(DisplayConfig(only_triggered=True, auto_scroll=True))
         try:
@@ -109,9 +109,9 @@ class TestDanmakuWindowDisplayOptions:
 
     def test_pending_queue_is_bounded(self, qt):
         """暂停期间队列必须有上限，否则一小时不下就是单向内存增长。"""
-        from danmaku_kb.config.models import DisplayConfig
-        from danmaku_kb.ui.danmaku_window import DanmakuWindow
-        from danmaku_kb.danmaku.message import make_system_message
+        from screenkey.config.models import DisplayConfig
+        from screenkey.ui.danmaku_window import DanmakuWindow
+        from screenkey.danmaku.message import make_system_message
 
         win = DanmakuWindow(DisplayConfig())
         try:
@@ -164,10 +164,10 @@ class TestMainWindowDisplaySync:
 # ===================================================================== 统计链路
 class TestStatsPipeline:
     def test_bridge_refresh_stats_emits_dict_snapshot(self, qt):
-        from danmaku_kb.engine import DanmakuKeyboardEngine
-        from danmaku_kb.ui.worker import EngineBridge
+        from screenkey.engine import ScreenKeyEngine
+        from screenkey.ui.worker import EngineBridge
 
-        engine = DanmakuKeyboardEngine()
+        engine = ScreenKeyEngine()
         engine.dry_run = True
         bridge = EngineBridge(engine)
         got: list = []
@@ -253,7 +253,7 @@ class TestSimulationSequence:
 class TestLoginDialogFixes:
     @pytest.fixture
     def dialog(self, qt):
-        from danmaku_kb.ui.login_dialog import LoginDialog
+        from screenkey.ui.login_dialog import LoginDialog
 
         dlg = LoginDialog(platform="bilibili")
         yield dlg
@@ -261,7 +261,7 @@ class TestLoginDialogFixes:
 
     def test_stale_generation_results_are_dropped(self, dialog):
         """旧轮询线程的结果不能覆盖新二维码的状态。"""
-        from danmaku_kb.login.bilibili_qr import LoginResult, QRState
+        from screenkey.login.bilibili_qr import LoginResult, QRState
 
         got: list = []
         dialog.biliUpdate.connect(got.append)
@@ -281,7 +281,7 @@ class TestLoginDialogFixes:
         assert dialog.bili_status.text() == "登录成功！已获取 SESSDATA（32 字符）"
 
     def test_success_locks_status_and_stops_polling(self, dialog):
-        from danmaku_kb.login.bilibili_qr import LoginResult, QRState
+        from screenkey.login.bilibili_qr import LoginResult, QRState
 
         result = LoginResult(state=QRState.SUCCESS, sessdata="abc123", message="登录成功")
         dialog._apply_bili_status(result)
@@ -291,7 +291,7 @@ class TestLoginDialogFixes:
         assert dialog._login is None
 
     def test_late_waiting_result_cannot_override_success(self, dialog):
-        from danmaku_kb.login.bilibili_qr import LoginResult, QRState
+        from screenkey.login.bilibili_qr import LoginResult, QRState
 
         dialog._apply_bili_status(
             LoginResult(state=QRState.SUCCESS, sessdata="abc123", message="登录成功")
@@ -332,7 +332,7 @@ class TestLoginDialogFixes:
             counter["n"] += 1
             return FakeLogin(counter["n"])
 
-        import danmaku_kb.ui.login_dialog as mod
+        import screenkey.ui.login_dialog as mod
 
         monkeypatch.setattr(mod, "BilibiliQRLogin", make_login)
         monkeypatch.setattr(mod, "make_qr_png", lambda *a, **k: b"")
@@ -375,7 +375,7 @@ class TestEndToEndSimulatedRun:
     def test_simulated_session_processes_danmaku_and_closes_cleanly(self, qt, isolated_manager):
         from PyQt5.QtWidgets import QApplication
 
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         # 关键：绝不在跑测试的机器上真的发按键
@@ -414,7 +414,7 @@ class TestEndToEndSimulatedRun:
         """
         from PyQt5.QtWidgets import QApplication
 
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         window.engine.dry_run = True
@@ -438,7 +438,7 @@ class TestEndToEndSimulatedRun:
 class TestQtEnvRetry:
     def test_missing_plugin_root_does_not_lock_state(self, qt, monkeypatch):
         """定位不到插件目录时不能置 ``_configured``，否则永远没有重试机会。"""
-        import danmaku_kb.ui.qt_env as qt_env
+        import screenkey.ui.qt_env as qt_env
 
         monkeypatch.setattr(qt_env, "_configured", False)
         monkeypatch.setattr(qt_env, "qt_plugin_path", None)

@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 弹幕键盘 V2 作者 / Danmaku Keyboard V2 authors
+Copyright (c) 2026 幕键 作者 / ScreenKey authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,9 @@ SOFTWARE.
 
 第三方代码声明 / Third-party notice
 
-src/danmaku_kb/data/sign.js 是第三方、已混淆的抖音 SDK 代码（copyright 属于抖音 / ByteDance），
+src/screenkey/data/sign.js 是第三方、已混淆的抖音 SDK 代码（copyright 属于抖音 / ByteDance），
 随包携带仅用于研究学习，不适用上面的 MIT 许可，请勿商用或二次分发。
-The file src/danmaku_kb/data/sign.js is third-party obfuscated Douyin SDK code
+The file src/screenkey/data/sign.js is third-party obfuscated Douyin SDK code
 (copyright belongs to Douyin / ByteDance). It is bundled for research and study
 only, is NOT covered by the MIT license above, and must not be used commercially
 or redistributed.

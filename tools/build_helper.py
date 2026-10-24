@@ -16,7 +16,7 @@ PyInstaller 的 Qt hook 会去读 ``PluginsPath`` 收集插件，拿到这个坏
     Exception: Qt plugin directory 'E:/DSHwork/????V2/.../plugins' does not exist!
 
 **这不是 PyInstaller 的缺陷，PyInstaller 只是受害者。** 注意 Qt 本身并不是
-完全不会处理中文路径（``QFileInfo(r"...\\弹幕键盘V2\\src").exists()`` 为 True），
+完全不会处理中文路径（``QFileInfo(r"...\\幕键\\src").exists()`` 为 True），
 只有 ``QLibraryInfo`` 这一条计算路径是坏的。
 
 判别因子只有一条：**路径里有没有非 ASCII 字符**。已排除的假设包括
@@ -62,7 +62,7 @@ from typing import Optional
 #: junction 位置的候选顺序。第一个能建成功的就用它。
 #: 都要求是**纯 ASCII** 且可写。
 LINK_CANDIDATES = (
-    "DANMAKU_KB_BUILD_LINK",  # 环境变量优先，方便用户自己指定
+    "SCREENKEY_BUILD_LINK",  # 环境变量优先，方便用户自己指定
     "%TEMP%",
     "%USERPROFILE%",
     "%SystemDrive%\\",
@@ -168,7 +168,7 @@ def _make_link(link: Path, target: Path) -> bool:
 def _pick_link_path() -> Optional[Path]:
     """挑一个可写的纯 ASCII 位置来放 junction。"""
     for raw in LINK_CANDIDATES:
-        if raw.startswith("DANMAKU_KB_BUILD_LINK"):
+        if raw.startswith("SCREENKEY_BUILD_LINK"):
             base_str = os.environ.get(raw, "")
             if not base_str:
                 continue
@@ -225,7 +225,7 @@ def ensure_ascii_build_root(project_root: Path, create: bool = True) -> Optional
         print(
             "[失败] 找不到可写的纯 ASCII 位置来建 junction。\n"
             "       可以自己指定一个，例如：\n"
-            "           set DANMAKU_KB_BUILD_LINK=D:\\builds\n"
+            "           set SCREENKEY_BUILD_LINK=D:\\builds\n"
             "       或者干脆把项目移到纯 ASCII 路径（推荐，最省事）。",
             file=sys.stderr,
         )
@@ -268,7 +268,7 @@ def ensure_ascii_build_root(project_root: Path, create: bool = True) -> Optional
     print(f"       完成：{link}", file=sys.stderr)
     print(
         "[说明] 产物仍会出现在真实项目目录里（junction 是透明的重定向）：\n"
-        f"       {project_root}\\dist\\弹幕键盘V2\\",
+        f"       {project_root}\\dist\\幕键\\",
         file=sys.stderr,
     )
     return link

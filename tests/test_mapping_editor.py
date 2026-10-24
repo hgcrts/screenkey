@@ -38,7 +38,7 @@ def qt():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE, "PyQt5 已装但探测为不可用，qt_env 的探测逻辑有问题"
     configure_qt_environment()
@@ -63,7 +63,7 @@ class _WarningRecorder:
 @pytest.fixture
 def no_modals(monkeypatch):
     """把 ``mapping_editor`` 里的 ``QMessageBox`` 换成记账替身。"""
-    import danmaku_kb.ui.mapping_editor as me
+    import screenkey.ui.mapping_editor as me
 
     recorder = _WarningRecorder()
     monkeypatch.setattr(me, "QMessageBox", recorder)
@@ -71,13 +71,13 @@ def no_modals(monkeypatch):
 
 
 def _key_editor(qt):
-    from danmaku_kb.ui.mapping_editor import MappingEditor
+    from screenkey.ui.mapping_editor import MappingEditor
 
     return MappingEditor(is_mouse=False)
 
 
 def _mouse_editor(qt):
-    from danmaku_kb.ui.mapping_editor import MappingEditor
+    from screenkey.ui.mapping_editor import MappingEditor
 
     return MappingEditor(is_mouse=True)
 
@@ -104,7 +104,7 @@ def _collected(editor):
 
 def _three_distinct():
     """三条**每个字段都不同**的键盘映射，任何字段丢失都会被看出来。"""
-    from danmaku_kb.input.mappings import KeyAction, KeyMapping, MatchMode
+    from screenkey.input.mappings import KeyAction, KeyMapping, MatchMode
 
     return [
         KeyMapping(
@@ -184,7 +184,7 @@ class TestMoveSelectedKeepsEveryField:
                 )
 
     def test_mouse_editor_also_moves(self, qt, no_modals):
-        from danmaku_kb.input.mappings import (
+        from screenkey.input.mappings import (
             MatchMode,
             MouseAction,
             MouseButton,
@@ -317,7 +317,7 @@ class TestMatchModeColumn:
         ]
 
     def test_regex_is_shown_and_read_back(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping, MatchMode
+        from screenkey.input.mappings import KeyMapping, MatchMode
 
         editor = _key_editor(qt)
         editor.load([
@@ -339,7 +339,7 @@ class TestMatchModeColumn:
 
     def test_every_label_is_selectable(self, qt, no_modals):
         """五种模式都要出现在下拉框里（``_MATCH_MODE_LABELS`` 不再无人引用）。"""
-        from danmaku_kb.input.mappings import MatchMode
+        from screenkey.input.mappings import MatchMode
 
         editor = _key_editor(qt)
         editor.add_row()
@@ -349,7 +349,7 @@ class TestMatchModeColumn:
         assert [combo.itemData(i) for i in range(combo.count())] == list(MatchMode)
 
     def test_mouse_editor_has_match_mode_too(self, qt, no_modals):
-        from danmaku_kb.input.mappings import MatchMode, MouseMapping
+        from screenkey.input.mappings import MatchMode, MouseMapping
 
         editor = _mouse_editor(qt)
         editor.load([MouseMapping(trigger="上滚", match_mode=MatchMode.STARTWITH)])
@@ -376,7 +376,7 @@ class TestMatchModeColumn:
         assert editor.collect()[0].match_mode.name == "EXACT"
 
     def test_illegal_match_mode_falls_back_to_exact(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="w", key="up", match_mode="bogus")])
@@ -385,7 +385,7 @@ class TestMatchModeColumn:
         assert editor.collect()[0].match_mode.name == "EXACT"
 
     def test_changing_combo_is_reflected_in_collect(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping, MatchMode
+        from screenkey.input.mappings import KeyMapping, MatchMode
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="w", key="up", match_mode=MatchMode.EXACT)])
@@ -398,7 +398,7 @@ class TestWarningBehaviour:
     """``collect()`` 照旧弹框，``move_selected`` 的预读必须安静。"""
 
     def test_collect_warns_on_empty_trigger(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -412,7 +412,7 @@ class TestWarningBehaviour:
 
     def test_move_selected_never_warns(self, qt, no_modals):
         """别的行非法时上移/下移只是空操作，**一个**警告框都不许弹。"""
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -431,7 +431,7 @@ class TestWarningBehaviour:
         assert [editor.table.cellWidget(r, 1).text() for r in range(3)] == before
 
     def test_collect_warns_on_unknown_key(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="w", key="definitely_not_a_key")])
@@ -504,7 +504,7 @@ def _nondefault_key_mappings():
     光靠它测不出 ``short_press_count`` / ``use_scancode`` 之类的丢失，
     所以这里每条都给不同的非默认值。
     """
-    from danmaku_kb.input.mappings import KeyAction, KeyMapping, MatchMode
+    from screenkey.input.mappings import KeyAction, KeyMapping, MatchMode
 
     return [
         KeyMapping(
@@ -533,7 +533,7 @@ def _nondefault_key_mappings():
 
 def _nondefault_mouse_mappings():
     """两条隐藏字段全部非默认的鼠标映射。"""
-    from danmaku_kb.input.mappings import (
+    from screenkey.input.mappings import (
         MatchMode,
         MouseAction,
         MouseButton,
@@ -563,7 +563,7 @@ class TestOpenAndSaveKeepsHiddenFields:
 
     def test_default_key_mappings_survive_roundtrip(self, qt, no_modals):
         """用**默认映射表**跑一遍真实的用户路径（任务书点名的 7 个字段）。"""
-        from danmaku_kb.input.mappings import default_key_mappings
+        from screenkey.input.mappings import default_key_mappings
 
         before = default_key_mappings()
         editor = _key_editor(qt)
@@ -583,7 +583,7 @@ class TestOpenAndSaveKeepsHiddenFields:
         assert sum(1 for m in after if m.enable_sensing) == 21
 
     def test_default_mouse_mappings_survive_roundtrip(self, qt, no_modals):
-        from danmaku_kb.input.mappings import default_mouse_mappings
+        from screenkey.input.mappings import default_mouse_mappings
 
         before = default_mouse_mappings()
         editor = _mouse_editor(qt)
@@ -620,7 +620,7 @@ class TestOpenAndSaveKeepsHiddenFields:
 
     def test_returned_objects_are_the_same_dataclass_type(self, qt, no_modals):
         """``dataclasses.replace`` 必须保持类型，不许换成别的类。"""
-        from danmaku_kb.input.mappings import KeyMapping, MouseMapping
+        from screenkey.input.mappings import KeyMapping, MouseMapping
 
         key_editor = _key_editor(qt)
         key_editor.load(_nondefault_key_mappings())
@@ -742,8 +742,8 @@ class TestDuplicateKeepsHiddenFields:
 
     def test_duplicate_copy_is_independent(self, qt, no_modals):
         """改了副本的可见列，不许串到原条（deepcopy 的意义）。"""
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import MatchMode
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import MatchMode
 
         before = _nondefault_key_mappings()
         editor = _key_editor(qt)
@@ -784,8 +784,8 @@ class TestEditingVisibleColumnsDoesNotDisturbHidden:
     """改可见列：可见列**确实**变了，隐藏字段**一点不动**。"""
 
     def test_change_match_mode_and_cooldown_and_description(self, qt, no_modals):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import MatchMode
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import MatchMode
 
         before = _nondefault_key_mappings()
         editor = _key_editor(qt)
@@ -832,7 +832,7 @@ class TestEditingVisibleColumnsDoesNotDisturbHidden:
         assert no_modals.calls == []
 
     def test_mouse_change_action_keeps_hidden(self, qt, no_modals):
-        from danmaku_kb.input.mappings import MouseAction
+        from screenkey.input.mappings import MouseAction
 
         before = _nondefault_mouse_mappings()
         editor = _mouse_editor(qt)
@@ -894,7 +894,7 @@ class TestOriginalsAlignment:
 
     def test_add_row_registers_new_object(self, qt):
         """``add_row`` 造的新映射也要进 ``_originals``，否则它后面那些行会错位。"""
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load(_nondefault_key_mappings())
@@ -904,7 +904,7 @@ class TestOriginalsAlignment:
 
     def test_row_to_mapping_out_of_range_falls_back_without_raising(self, qt, no_modals):
         """越界必须安全回落成"新建对象"，**不许抛异常**。"""
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="w", key="up")])
@@ -934,7 +934,7 @@ class TestOriginalsAlignment:
         → ``collect()`` 按既有规则弹「按键为空」返回 ``None``，
         **而不是**把 ``TypeError`` 冒到界面上。
         """
-        from danmaku_kb.input.mappings import KeyMapping, MouseMapping
+        from screenkey.input.mappings import KeyMapping, MouseMapping
 
         editor = _key_editor(qt)
         editor.load(_nondefault_mouse_mappings())   # 类型不匹配的原始对象
@@ -958,7 +958,7 @@ class TestOriginalsAlignment:
         class _Legacy:
             trigger = "w"
 
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         assert editor._replace_original(
@@ -976,7 +976,7 @@ class TestOriginalsAlignment:
             description = "旧数据"
             enabled = True
 
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([_Legacy()])
@@ -994,8 +994,8 @@ class TestHoldDurationColumn:
     """用户诉求：长按要能设置按多久（以前只有 dataclass 默认 0.5 秒，界面上改不了）。"""
 
     def test_default_hold_is_half_second(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="w", key="up")])
@@ -1006,8 +1006,8 @@ class TestHoldDurationColumn:
         assert (me.HOLD_MIN, me.HOLD_MAX) == (0.05, 5.0)
 
     def test_hold_shown_from_config(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -1031,8 +1031,8 @@ class TestHoldDurationColumn:
     def test_hold_column_is_hidden_when_no_row_is_long_press(self, qt):
         """用户反馈：一列常驻「长按(秒)」很突兀，会让人以为别的动作也用它。"""
 
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="w", key="up")])  # 动作默认是「按下并松开」
@@ -1041,8 +1041,8 @@ class TestHoldDurationColumn:
         assert editor.table.cellWidget(0, me._COL_HOLD).isHidden() is True
 
     def test_hold_column_appears_after_choosing_long_press(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="w", key="up")])
@@ -1059,8 +1059,8 @@ class TestHoldDurationColumn:
         assert hold.isHidden() is True
 
     def test_hold_box_hidden_only_for_non_long_press_rows(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -1076,8 +1076,8 @@ class TestHoldDurationColumn:
     def test_hold_value_survives_switching_action_away_and_back(self, qt, no_modals):
         """藏起来只是看不见，值必须留着 —— 否则切一下动作就把配置改了。"""
 
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -1103,8 +1103,8 @@ class TestHoldDurationColumn:
         assert hold.value() == pytest.approx(3.5)
 
     def test_removing_last_long_press_row_hides_the_column_again(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([KeyMapping(trigger="q", key="q", action=KeyAction.LONG_PRESS)])
@@ -1117,8 +1117,8 @@ class TestHoldDurationColumn:
         assert editor.table.isColumnHidden(me._COL_HOLD) is True
 
     def test_mouse_hold_column_also_hidden_for_click(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import MouseAction, MouseButton, MouseMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import MouseAction, MouseButton, MouseMapping
 
         editor = _mouse_editor(qt)
         editor.load([MouseMapping(trigger="点", button=MouseButton.LEFT)])
@@ -1132,8 +1132,8 @@ class TestHoldDurationColumn:
     def test_hold_is_clamped_on_load(self, qt):
         """配置里写了越界值（手改 JSON / 旧版本）时夹进可选范围，不许原样显示。"""
 
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -1145,8 +1145,8 @@ class TestHoldDurationColumn:
         assert editor.table.cellWidget(1, me._COL_HOLD).value() == pytest.approx(me.HOLD_MIN)
 
     def test_editing_hold_is_collected(self, qt, no_modals):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -1162,8 +1162,8 @@ class TestHoldDurationColumn:
         assert no_modals.calls == []
 
     def test_mouse_hold_column_works(self, qt, no_modals):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import MouseAction, MouseButton, MouseMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import MouseAction, MouseButton, MouseMapping
 
         editor = _mouse_editor(qt)
         editor.load([
@@ -1182,8 +1182,8 @@ class TestHoldDurationColumn:
     def test_hold_is_kept_for_non_long_press_actions(self, qt, no_modals):
         """动作不是「长按」时这个值也照旧存着：改回长按不用重新填。"""
 
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -1200,7 +1200,7 @@ class TestHoldDurationColumn:
     def test_hold_survives_json_roundtrip(self):
         """存盘走 ``to_dict`` / ``from_dict``，长按时长必须真的进得了 settings.json。"""
 
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         original = KeyMapping(trigger="q", key="q", action=KeyAction.LONG_PRESS,
                               long_press_duration=1.25)
@@ -1211,7 +1211,7 @@ class TestHoldDurationColumn:
         assert restored.action is KeyAction.LONG_PRESS
 
     def test_coerce_hold_helper(self):
-        import danmaku_kb.ui.mapping_editor as me
+        import screenkey.ui.mapping_editor as me
 
         assert me._coerce_hold(None) == pytest.approx(me.HOLD_DEFAULT)
         assert me._coerce_hold("abc") == pytest.approx(me.HOLD_DEFAULT)
@@ -1222,8 +1222,8 @@ class TestHoldDurationColumn:
 
     def test_missing_hold_widget_keeps_original_value(self, qt, no_modals):
         """控件缺失时回落到**原值**，不是默认 0.5——否则等于静默改配置。"""
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         editor = _key_editor(qt)
         editor.load([
@@ -1239,8 +1239,8 @@ class TestHoldDurationColumn:
     def test_dialog_returns_edited_hold(self, qt, no_modals):
         """整条链路：编辑器对话框「确定」后拿到的是界面上设的时长。"""
 
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         dialog = me.MappingEditorDialog(
             [KeyMapping(trigger="q", key="q", action=KeyAction.LONG_PRESS)],
@@ -1262,12 +1262,12 @@ class TestActionLabel:
     """用户反馈：不进编辑器时，映射页「动作」列显示的是英文。
 
     以前总表直接写 ``m.action.value``（``press_and_release`` / ``click``），
-    现在统一走 :func:`danmaku_kb.ui.mapping_editor.action_label`。
+    现在统一走 :func:`screenkey.ui.mapping_editor.action_label`。
     """
 
     def test_keyboard_actions(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import KeyAction, KeyMapping
 
         assert me.action_label(KeyMapping(trigger="w", key="up")) == "按下并松开（点按）"
         assert me.action_label(
@@ -1282,8 +1282,8 @@ class TestActionLabel:
         ) == "长按 1.25s"
 
     def test_mouse_actions(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
-        from danmaku_kb.input.mappings import MouseAction, MouseMapping
+        import screenkey.ui.mapping_editor as me
+        from screenkey.input.mappings import MouseAction, MouseMapping
 
         assert me.action_label(MouseMapping(trigger="左键")) == "单击"
         assert me.action_label(
@@ -1298,14 +1298,14 @@ class TestActionLabel:
         ) == "长按 0.80s"
 
     def test_missing_action_returns_empty(self, qt):
-        import danmaku_kb.ui.mapping_editor as me
+        import screenkey.ui.mapping_editor as me
 
         assert me.action_label(object()) == ""
 
     def test_unlabelled_enum_falls_back_to_value(self, qt):
         """以后新增动作忘了写中文说明时，至少显示 value，而不是空白。"""
 
-        import danmaku_kb.ui.mapping_editor as me
+        import screenkey.ui.mapping_editor as me
 
         class _FakeAction:
             name = "SOMETHING_NEW"

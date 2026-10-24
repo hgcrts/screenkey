@@ -20,20 +20,20 @@ from pathlib import Path
 
 import pytest
 
-from danmaku_kb.input import hotkey as hotkey_mod
-from danmaku_kb.input import keycodes
-from danmaku_kb.input.hotkey import GlobalHotkey, normalize_hotkey
-from danmaku_kb.input.keyboard import KeyboardController
-from danmaku_kb.input.mappings import (
+from screenkey.input import hotkey as hotkey_mod
+from screenkey.input import keycodes
+from screenkey.input.hotkey import GlobalHotkey, normalize_hotkey
+from screenkey.input.keyboard import KeyboardController
+from screenkey.input.mappings import (
     KeyAction,
     KeyMapping,
     MouseAction,
     MouseMapping,
 )
-from danmaku_kb.input.mouse import WHEEL_DELTA, MouseController
+from screenkey.input.mouse import WHEEL_DELTA, MouseController
 
 SRC = Path(__file__).resolve().parents[1] / "src"
-KEYCODES_PATH = SRC / "danmaku_kb" / "input" / "keycodes.py"
+KEYCODES_PATH = SRC / "screenkey" / "input" / "keycodes.py"
 
 
 # --------------------------------------------------------------------------
@@ -315,7 +315,7 @@ class TestKeyboardController:
         def boom(_seconds):
             raise KeyboardInterrupt("模拟中断")
 
-        monkeypatch.setattr("danmaku_kb.input.keyboard.time.sleep", boom)
+        monkeypatch.setattr("screenkey.input.keyboard.time.sleep", boom)
         with pytest.raises(KeyboardInterrupt):
             kb.tap("w", duration=1.0)
         assert kb.pressed_keys == set(), "异常也必须把键抬起来"
@@ -353,7 +353,7 @@ class TestKeyboardController:
 
     def test_execute_long_press_uses_mapping_duration(self, kb, spy, monkeypatch):
         slept: list = []
-        monkeypatch.setattr("danmaku_kb.input.keyboard.time.sleep", lambda s: slept.append(s))
+        monkeypatch.setattr("screenkey.input.keyboard.time.sleep", lambda s: slept.append(s))
         mapping = KeyMapping(
             trigger="w", key="up", action=KeyAction.LONG_PRESS, long_press_duration=0.75
         )
@@ -363,7 +363,7 @@ class TestKeyboardController:
     def test_execute_is_long_press_flag_overrides_action(self, kb, spy, monkeypatch):
         """匹配器判为长按时，即使映射写的是普通动作也走长按。"""
         slept: list = []
-        monkeypatch.setattr("danmaku_kb.input.keyboard.time.sleep", lambda s: slept.append(s))
+        monkeypatch.setattr("screenkey.input.keyboard.time.sleep", lambda s: slept.append(s))
         mapping = KeyMapping(
             trigger="w", key="up", action=KeyAction.PRESS_AND_RELEASE,
             long_press_duration=0.6,
@@ -373,7 +373,7 @@ class TestKeyboardController:
 
     def test_execute_duration_override(self, kb, spy, monkeypatch):
         slept: list = []
-        monkeypatch.setattr("danmaku_kb.input.keyboard.time.sleep", lambda s: slept.append(s))
+        monkeypatch.setattr("screenkey.input.keyboard.time.sleep", lambda s: slept.append(s))
         mapping = KeyMapping(trigger="w", key="up", action=KeyAction.LONG_PRESS)
         kb.execute(mapping, duration=1.25)
         assert slept == [1.25]
@@ -381,7 +381,7 @@ class TestKeyboardController:
     def test_long_press_has_a_floor(self, kb, spy, monkeypatch):
         """``long_press`` 至少按 0.01 秒，避免 duration=0 时按下即抬起。"""
         slept: list = []
-        monkeypatch.setattr("danmaku_kb.input.keyboard.time.sleep", lambda s: slept.append(s))
+        monkeypatch.setattr("screenkey.input.keyboard.time.sleep", lambda s: slept.append(s))
         kb.long_press("w", duration=0)
         assert slept == [0.01]
 
@@ -532,13 +532,13 @@ class TestMouseController:
         assert "left" not in mouse.pressed_buttons
 
     def test_long_press_releases_in_finally(self, mouse, spy, monkeypatch):
-        monkeypatch.setattr("danmaku_kb.input.mouse.time.sleep", lambda s: None)
+        monkeypatch.setattr("screenkey.input.mouse.time.sleep", lambda s: None)
         assert mouse.long_press("left", duration=0.5) is True
         assert mouse.pressed_buttons == set()
 
     def test_long_press_has_a_floor(self, mouse, spy, monkeypatch):
         slept: list = []
-        monkeypatch.setattr("danmaku_kb.input.mouse.time.sleep", lambda s: slept.append(s))
+        monkeypatch.setattr("screenkey.input.mouse.time.sleep", lambda s: slept.append(s))
         mouse.long_press("left", duration=0)
         assert slept == [0.01]
 
@@ -603,7 +603,7 @@ class TestMouseController:
         assert expected in spy.names, f"{action} 应调 {expected}，实际 {spy.names}"
 
     def test_execute_long_press(self, mouse, spy, monkeypatch):
-        monkeypatch.setattr("danmaku_kb.input.mouse.time.sleep", lambda s: None)
+        monkeypatch.setattr("screenkey.input.mouse.time.sleep", lambda s: None)
         mapping = MouseMapping(
             trigger="t", action=MouseAction.LONG_PRESS, long_press_duration=0.4
         )

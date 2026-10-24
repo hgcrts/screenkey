@@ -32,7 +32,7 @@ from typing import Any
 import pytest
 
 BILIBILI_PY = (
-    Path(__file__).resolve().parents[1] / "src" / "danmaku_kb" / "danmaku" / "bilibili.py"
+    Path(__file__).resolve().parents[1] / "src" / "screenkey" / "danmaku" / "bilibili.py"
 )
 
 
@@ -43,7 +43,7 @@ def source() -> str:
 
 @pytest.fixture(scope="module")
 def module():
-    from danmaku_kb.danmaku import bilibili
+    from screenkey.danmaku import bilibili
 
     return bilibili
 
@@ -127,7 +127,7 @@ class TestAcceptEncoding:
         douyin_src = (
             Path(__file__).resolve().parents[1]
             / "src"
-            / "danmaku_kb"
+            / "screenkey"
             / "danmaku"
             / "douyin.py"
         ).read_text(encoding="utf-8")
@@ -408,7 +408,7 @@ class TestConnectionLifecycle:
 
 class TestConnectGuards:
     def test_extract_room_id_from_various_inputs(self):
-        from danmaku_kb.utils.helpers import extract_bilibili_room_id
+        from screenkey.utils.helpers import extract_bilibili_room_id
 
         assert extract_bilibili_room_id("https://live.bilibili.com/22637261") == "22637261"
         assert extract_bilibili_room_id("live.bilibili.com/12345") == "12345"
@@ -809,7 +809,7 @@ class TestInteractWordV2AndStats:
 
     def test_unknown_v2_msg_type_is_ignored(self, module):
         """msg_type=9（协议里的其他互动）不应被当成进场。"""
-        from danmaku_kb.danmaku.protobuf_lite import encode_field_string, encode_field_varint
+        from screenkey.danmaku.protobuf_lite import encode_field_string, encode_field_varint
 
         body = encode_field_varint(1, 1) + encode_field_string(2, "x") + encode_field_varint(5, 9)
         fetcher = _FakeFetcher()

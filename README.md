@@ -1,4 +1,4 @@
-# 弹幕键盘 V2
+# 幕键 · ScreenKey
 
 简体中文 | [English](README.en.md)
 
@@ -6,7 +6,7 @@
 
 把直播弹幕变成真实的键盘和鼠标操作。支持 **抖音** 和 **B站** 双平台，Windows 免安装开箱即用。
 
-[![Release](https://img.shields.io/github/v/release/hgcrts/danmaku-keyboard-v2?label=%E4%B8%8B%E8%BD%BD&color=blue)](https://github.com/hgcrts/danmaku-keyboard-v2/releases/latest)
+[![Release](https://img.shields.io/github/v/release/hgcrts/screenkey?label=%E4%B8%8B%E8%BD%BD&color=blue)](https://github.com/hgcrts/screenkey/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-lightgrey)
 
@@ -23,17 +23,17 @@
 
 ## 下载
 
-**不想装 Python**：直接下打包版，解压双击 `弹幕键盘V2.exe`。
+**不想装 Python**：直接下打包版，解压双击 `ScreenKey.exe`。
 
-➡️ **[DanmakuKeyboard-V2.1.0-win64.zip](https://github.com/hgcrts/danmaku-keyboard-v2/releases/latest)**（约 42 MB，SHA-256 见 Release 页）
+➡️ **[ScreenKey-v3.0.0-win64.zip](https://github.com/hgcrts/screenkey/releases/latest)**（约 43 MB，SHA-256 见 Release 页）
 
 **想改代码**：
 
 ```bat
-git clone https://github.com/hgcrts/danmaku-keyboard-v2.git
-cd danmaku-keyboard-v2
+git clone https://github.com/hgcrts/screenkey.git
+cd screenkey
 python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m danmaku_kb
+.venv\Scripts\python -m screenkey
 ```
 
 ## 三步开始
@@ -62,8 +62,14 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 | 安装细节、CLI、配置项、测试怎么跑 | [docs/开发文档.md](docs/开发文档.md) |
 | 出问题了 | [docs/开发文档.md 的常见问题](docs/开发文档.md#常见问题) |
 
+## 名字变更
+
+v3.0.0 起，项目从「弹幕键盘V2」更名为 **幕键 / ScreenKey**（同一个程序、同一批功能）。
+旧版下载的文件名仍是 `DanmakuKeyboard-V2.1.0-win64.zip`，可以直接用新版覆盖解压；
+配置文件会从旧的 `~/.danmaku_kb` 自动迁移到 `~/.screenkey`，登录凭证不用重新扫码。
+
 ## 许可证
 
-[MIT](LICENSE)。`src/danmaku_kb/data/sign.js` 是第三方抖音 SDK 代码，仅限研究学习，不适用 MIT（详见 LICENSE 里的第三方声明）。
+[MIT](LICENSE)。`src/screenkey/data/sign.js` 是第三方抖音 SDK 代码，仅限研究学习，不适用 MIT（详见 LICENSE 里的第三方声明）。
 
 本项目与抖音、B站官方无关，使用前请遵守平台规则，风险自负。

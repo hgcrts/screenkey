@@ -27,7 +27,7 @@ import os
 
 import pytest
 
-from danmaku_kb.login.douyin import (
+from screenkey.login.douyin import (
     check_cookie_text,
     parse_cookie_string,
     sanitize_cookie_header,
@@ -127,7 +127,7 @@ class TestWebsocketsGroundTruth:
 
 class TestFetcherHeaders:
     def test_headers_never_contain_illegal_chars(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         value = DouyinFetcher(cookie=truncated_cookie())._headers()["Cookie"]
         assert "\u2026" not in value
@@ -135,32 +135,32 @@ class TestFetcherHeaders:
         datastructures.Headers({"Cookie": value})  # 不抛就算过
 
     def test_clean_cookie_is_passed_through_unchanged(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         assert DouyinFetcher(cookie=CLEAN)._headers()["Cookie"] == CLEAN
 
     def test_ttwid_extraction_ignores_ellipsis(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         assert DouyinFetcher(cookie=truncated_cookie())._ensure_ttwid() == "1%7Cabc"
 
 
 class TestHeaderErrorTranslation:
     def test_recognizes_invalid_cookie_header(self):
-        from danmaku_kb.danmaku.douyin import _looks_like_header_error
+        from screenkey.danmaku.douyin import _looks_like_header_error
 
         assert _looks_like_header_error(Exception("invalid Cookie header: ttwid=1"))
         assert not _looks_like_header_error(ConnectionResetError("connection reset"))
 
     def test_message_is_actionable_and_truncates_long_values(self):
-        from danmaku_kb.danmaku.douyin import _header_error_text
+        from screenkey.danmaku.douyin import _header_error_text
 
         text = _header_error_text(Exception("invalid Cookie header: " + "t" * 500))
         assert "重新完整粘贴" in text
         assert len(text) < 400
 
     def test_cookie_header_error_is_runtime_error(self):
-        from danmaku_kb.danmaku.douyin import CookieHeaderError
+        from screenkey.danmaku.douyin import CookieHeaderError
 
         assert issubclass(CookieHeaderError, RuntimeError)
 
@@ -169,7 +169,7 @@ class TestNoPointlessRetry:
     def test_header_error_stops_immediately(self):
         """握手期的 header 错误只报一次：重试一万次也不会变好。"""
 
-        from danmaku_kb.danmaku.douyin import CookieHeaderError, DouyinFetcher
+        from screenkey.danmaku.douyin import CookieHeaderError, DouyinFetcher
 
         fetcher = DouyinFetcher(cookie=truncated_cookie())
         calls = {"connect": 0, "errors": [], "status": []}
@@ -193,7 +193,7 @@ class TestStopIsNotReconnect:
     def test_pressing_stop_does_not_report_retry(self):
         """用户按"停止"时不该闪过"正在重试"，会被误读成连不上。"""
 
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher(cookie=CLEAN)
         status: list = []
@@ -216,7 +216,7 @@ def qt():
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     pytest.importorskip("PyQt5", reason="需要 PyQt5 才能测界面")
 
-    from danmaku_kb.ui.qt_env import configure_qt_environment
+    from screenkey.ui.qt_env import configure_qt_environment
 
     configure_qt_environment()
 
@@ -231,8 +231,8 @@ class TestCredentialSummaryWarning:
     def test_truncated_cookie_warning_is_visible(self, qt):
         from types import SimpleNamespace
 
-        from danmaku_kb.config.models import Platform
-        from danmaku_kb.ui.main_window import credential_summary
+        from screenkey.config.models import Platform
+        from screenkey.ui.main_window import credential_summary
 
         connection = SimpleNamespace(cookie=truncated_cookie(), sessdata="")
         text = credential_summary(connection, Platform.DOUYIN)
@@ -243,8 +243,8 @@ class TestCredentialSummaryWarning:
     def test_clean_cookie_has_no_warning(self, qt):
         from types import SimpleNamespace
 
-        from danmaku_kb.config.models import Platform
-        from danmaku_kb.ui.main_window import credential_summary
+        from screenkey.config.models import Platform
+        from screenkey.ui.main_window import credential_summary
 
         connection = SimpleNamespace(cookie=CLEAN, sessdata="")
         text = credential_summary(connection, Platform.DOUYIN)

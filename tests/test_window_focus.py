@@ -2,7 +2,7 @@
 
 覆盖三层：
 
-* :mod:`danmaku_kb.input.window` 的纯逻辑（匹配、取值、fail-closed 正则）；
+* :mod:`screenkey.input.window` 的纯逻辑（匹配、取值、fail-closed 正则）；
 * 配置层：``focus_filter`` 能不能往返、手改 JSON 会不会把 ``"false"`` 当开启；
 * 引擎闸门：前台窗口不匹配时**一个按键都不发**，并且**不消耗冷却**
   （否则用户切回游戏后发现还要再等一个冷却，体感就是"没修好"）。
@@ -24,13 +24,13 @@ SRC = PROJECT_ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from danmaku_kb.config.models import AppConfig, FocusFilterConfig, InputConfig  # noqa: E402
-from danmaku_kb.danmaku.message import DanmakuMessage  # noqa: E402
-from danmaku_kb.filters.rules import FilterEngine  # noqa: E402
-from danmaku_kb.focus_gate import FocusGate  # noqa: E402
-from danmaku_kb.input import window as window_mod  # noqa: E402
-from danmaku_kb.input.mappings import KeyAction, KeyMapping  # noqa: E402
-from danmaku_kb.input.window import (  # noqa: E402
+from screenkey.config.models import AppConfig, FocusFilterConfig, InputConfig  # noqa: E402
+from screenkey.danmaku.message import DanmakuMessage  # noqa: E402
+from screenkey.filters.rules import FilterEngine  # noqa: E402
+from screenkey.focus_gate import FocusGate  # noqa: E402
+from screenkey.input import window as window_mod  # noqa: E402
+from screenkey.input.mappings import KeyAction, KeyMapping  # noqa: E402
+from screenkey.input.window import (  # noqa: E402
     FocusFilter,
     WindowInfo,
     coerce_field,
@@ -255,7 +255,7 @@ class TestFocusFilterConfig:
         assert InputConfig.from_dict({"enabled": True}).focus_filter == FocusFilterConfig()
 
     def test_nested_focus_filter_survives_appconfig_roundtrip(self) -> None:
-        from danmaku_kb.config.models import AppConfig
+        from screenkey.config.models import AppConfig
 
         cfg = AppConfig()
         cfg.input.focus_filter = FocusFilterConfig(
@@ -291,11 +291,11 @@ class _Recorder:
 
 
 def _make_engine(*, focus: FocusFilterConfig, dry_run: bool = False):
-    from danmaku_kb.engine import DanmakuKeyboardEngine
+    from screenkey.engine import ScreenKeyEngine
 
     config = InputConfig()
     config.focus_filter = focus
-    from danmaku_kb.config.models import AppConfig
+    from screenkey.config.models import AppConfig
 
     app_config = AppConfig()
     app_config.input = config
@@ -305,7 +305,7 @@ def _make_engine(*, focus: FocusFilterConfig, dry_run: bool = False):
     app_config.input.dedupe_window = 0.0
     app_config.input.max_actions_per_message = 1
 
-    engine = DanmakuKeyboardEngine(
+    engine = ScreenKeyEngine(
         config=app_config,
         key_mappings=[_key_mapping()],
         mouse_mappings=[],
@@ -458,7 +458,7 @@ def qt():
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     pytest.importorskip("PyQt5", reason="需要 PyQt5 才能测界面")
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE, "PyQt5 已装但探测为不可用，qt_env 的探测逻辑有问题"
     configure_qt_environment()
@@ -471,8 +471,8 @@ def qt():
 @pytest.fixture
 def focused_window(qt, tmp_path):
     """真建一个主窗口；退出时关掉（会走 closeEvent 的落盘路径）。"""
-    from danmaku_kb.config.manager import ConfigManager
-    from danmaku_kb.ui.main_window import MainWindow
+    from screenkey.config.manager import ConfigManager
+    from screenkey.ui.main_window import MainWindow
 
     manager = ConfigManager(config_dir=tmp_path / "cfg", auto_save=False)
     manager.load()
@@ -529,7 +529,7 @@ class TestMainWindowFocusUi:
     def test_pick_window_fills_pattern(self, focused_window: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         from PyQt5.QtWidgets import QInputDialog
 
-        from danmaku_kb.ui import main_window as mw
+        from screenkey.ui import main_window as mw
 
         win, manager = focused_window
         win.focus_enable.setChecked(True)
@@ -546,7 +546,7 @@ class TestMainWindowFocusUi:
     def test_pick_window_cancel_keeps_pattern(self, focused_window: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         from PyQt5.QtWidgets import QInputDialog
 
-        from danmaku_kb.ui import main_window as mw
+        from screenkey.ui import main_window as mw
 
         win, manager = focused_window
         win.focus_enable.setChecked(True)
@@ -560,7 +560,7 @@ class TestMainWindowFocusUi:
     def test_pick_window_without_windows_explains(self, focused_window: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         from PyQt5.QtWidgets import QMessageBox
 
-        from danmaku_kb.ui import main_window as mw
+        from screenkey.ui import main_window as mw
 
         win, _ = focused_window
         win.focus_enable.setChecked(True)
@@ -575,7 +575,7 @@ class TestMainWindowFocusUi:
     def test_pick_window_when_enumeration_raises(self, focused_window: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         from PyQt5.QtWidgets import QMessageBox
 
-        from danmaku_kb.ui import main_window as mw
+        from screenkey.ui import main_window as mw
 
         win, _ = focused_window
         win.focus_enable.setChecked(True)
@@ -591,8 +591,8 @@ class TestMainWindowFocusUi:
 
     def test_settings_survive_restart(self, qt: Any, tmp_path: Path) -> None:
         """关掉再打开：焦点设置必须还在（这是本功能最容易做漏的一半）。"""
-        from danmaku_kb.config.manager import ConfigManager
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.config.manager import ConfigManager
+        from screenkey.ui.main_window import MainWindow
 
         config_dir = tmp_path / "cfg"
 

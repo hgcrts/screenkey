@@ -1,4 +1,4 @@
-# Danmaku Keyboard V2
+# 幕键 · ScreenKey
 
 [简体中文](README.md) | **English**
 
@@ -6,7 +6,7 @@
 
 Turn live-stream comments into real keyboard and mouse input. Supports **Bilibili** and **Douyin (TikTok China)**, packaged for Windows with no installation.
 
-[![Release](https://img.shields.io/github/v/release/hgcrts/danmaku-keyboard-v2?label=download&color=blue)](https://github.com/hgcrts/danmaku-keyboard-v2/releases/latest)
+[![Release](https://img.shields.io/github/v/release/hgcrts/screenkey?label=download&color=blue)](https://github.com/hgcrts/screenkey/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-lightgrey)
 
@@ -23,17 +23,17 @@ Turn live-stream comments into real keyboard and mouse input. Supports **Bilibil
 
 ## Download
 
-**No Python needed** — grab the packaged build, unzip, run `弹幕键盘V2.exe`.
+**No Python needed** — grab the packaged build, unzip, run `ScreenKey.exe`.
 
-➡️ **[DanmakuKeyboard-V2.1.0-win64.zip](https://github.com/hgcrts/danmaku-keyboard-v2/releases/latest)** (~42 MB, SHA-256 on the release page)
+➡️ **[ScreenKey-v2.1.0-win64.zip](https://github.com/hgcrts/screenkey/releases/latest)** (~42 MB, SHA-256 on the release page)
 
 **From source**:
 
 ```bat
-git clone https://github.com/hgcrts/danmaku-keyboard-v2.git
-cd danmaku-keyboard-v2
+git clone https://github.com/hgcrts/screenkey.git
+cd screenkey
 python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m danmaku_kb
+.venv\Scripts\python -m screenkey
 ```
 
 ## Three steps
@@ -66,6 +66,6 @@ All long-form docs are in Chinese today:
 
 ## License
 
-[MIT](LICENSE). `src/danmaku_kb/data/sign.js` is third-party Douyin SDK code bundled for study only and is **not** covered by the MIT license (see the third-party notice in LICENSE).
+[MIT](LICENSE). `src/screenkey/data/sign.js` is third-party Douyin SDK code bundled for study only and is **not** covered by the MIT license (see the third-party notice in LICENSE).
 
 Not affiliated with Douyin or Bilibili. Follow each platform's terms; use at your own risk.

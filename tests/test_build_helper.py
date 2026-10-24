@@ -6,7 +6,7 @@
 所以这里既测行为，也把「删除必须用 ``os.rmdir``」这条安全属性钉死。
 
 背景（为什么需要它）：PyQt5 5.15.x 的 ``QLibraryInfo`` 处理不了非 ASCII
-安装路径，把「弹幕键盘」变成 ``????``，导致 PyInstaller 的 Qt hook 报
+安装路径，把「幕键」变成 ``????``，导致 PyInstaller 的 Qt hook 报
 ``Qt plugin directory '.../????V2/...' does not exist!``。解法是建一个纯
 ASCII 的 junction 再从那里构建。
 """
@@ -30,7 +30,7 @@ HELPER_PATH = PROJECT_ROOT / "tools" / "build_helper.py"
 
 # 本文件几乎每个测试都需要一个**纯 ASCII** 的临时目录——这正是被测对象
 # 关心的性质。不能用 pytest 的 ``tmp_path``：它落在
-# ``E:\DSHwork\弹幕键盘V2\.test_tmp\...`` 里，而项目目录名「弹幕键盘V2」
+# ``E:\DSHwork\幕键\.test_tmp\...`` 里，而项目目录名「幕键」
 # 本身就含中文，用它测「ASCII 路径直接构建」会永远走进非 ASCII 分支。
 # 所以自己造一个 ASCII 根（``E:\DSHwork`` 是 ASCII，``.tmp`` 也是）。
 _ASCII_TMP_BASE = PROJECT_ROOT.parent / ".tmp" / "build_helper_tests"
@@ -88,10 +88,10 @@ def ascii_tmp():
 
 class TestAsciiDetection:
     def test_pure_ascii_path(self, helper):
-        assert helper.is_ascii_path(Path(r"E:\DSHwork\danmaku-kb")) is True
+        assert helper.is_ascii_path(Path(r"E:\DSHwork\screenkey")) is True
 
     def test_chinese_path_is_not_ascii(self, helper):
-        assert helper.is_ascii_path(Path(r"E:\DSHwork\弹幕键盘V2")) is False
+        assert helper.is_ascii_path(Path(r"E:\DSHwork\幕键")) is False
 
     def test_ascii_boundary(self, helper):
         """ord(ch) == 127 仍算 ASCII，128 开始不算。"""
@@ -100,9 +100,9 @@ class TestAsciiDetection:
 
     def test_describe_lists_the_bad_chars(self, helper):
         """列出的是**去重且排序**的非 ASCII 字符，用于告诉用户是哪个目录名。"""
-        got = helper.describe_non_ascii(Path(r"E:\DSHwork\弹幕键盘V2"))
-        # 幕 U+5E55 < 弹 U+5F39 < 盘 U+76D8 < 键 U+952E
-        assert got == "幕弹盘键"
+        got = helper.describe_non_ascii(Path(r"E:\DSHwork\幕键"))
+        # 幕 U+5E55 < 键 U+952E，去重后按码点排序
+        assert got == "幕键"
 
     def test_describe_empty_for_ascii(self, helper):
         assert helper.describe_non_ascii(Path(r"E:\DSHwork\dmkb2")) == ""
@@ -230,13 +230,13 @@ class TestDanglingJunction:
 
     def test_ensure_rebuilds_over_dangling(self, helper, ascii_tmp, monkeypatch, capsys):
         """端到端：悬空 junction 必须被删掉重建，而不是让 mklink 报"已存在"。"""
-        project = ascii_tmp / "弹幕键盘V2"
+        project = ascii_tmp / "幕键"
         project.mkdir()
         (project / "main.spec").write_text("# spec", encoding="utf-8")
 
         link_home = ascii_tmp / "ascii_home"
         link_home.mkdir()
-        monkeypatch.setenv("DANMAKU_KB_BUILD_LINK", str(link_home))
+        monkeypatch.setenv("SCREENKEY_BUILD_LINK", str(link_home))
 
         # 先在目标位置造一个悬空 junction
         gone = ascii_tmp / "gone"
@@ -303,7 +303,7 @@ class TestEnsureAsciiBuildRoot:
 
     def test_check_mode_creates_nothing_for_non_ascii(self, helper, ascii_tmp, capsys):
         """``--check`` 的契约：只报告，绝不创建。"""
-        project = ascii_tmp / "弹幕键盘V2"
+        project = ascii_tmp / "幕键"
         project.mkdir()
         (project / "main.spec").write_text("# spec", encoding="utf-8")
 
@@ -313,23 +313,23 @@ class TestEnsureAsciiBuildRoot:
         assert "非 ASCII" in err
         assert "仅检查模式" in err
         # 没有任何东西被创建
-        assert {p.name for p in ascii_tmp.iterdir()} == {"弹幕键盘V2"}
+        assert {p.name for p in ascii_tmp.iterdir()} == {"幕键"}
 
     def test_check_mode_reports_the_offending_chars(self, helper, ascii_tmp, capsys):
-        project = ascii_tmp / "弹幕键盘V2"
+        project = ascii_tmp / "幕键"
         project.mkdir()
         helper.ensure_ascii_build_root(project, create=False)
-        assert "幕弹盘键" in capsys.readouterr().err
+        assert "幕键" in capsys.readouterr().err
 
     def test_creates_junction_and_returns_it(self, helper, ascii_tmp, monkeypatch):
         """非 ASCII 路径 + create=True → 建 junction 并返回它。"""
-        project = ascii_tmp / "弹幕键盘V2"
+        project = ascii_tmp / "幕键"
         project.mkdir()
         (project / "main.spec").write_text("# spec", encoding="utf-8")
 
         link_home = ascii_tmp / "ascii_home"
         link_home.mkdir()
-        monkeypatch.setenv("DANMAKU_KB_BUILD_LINK", str(link_home))
+        monkeypatch.setenv("SCREENKEY_BUILD_LINK", str(link_home))
 
         got = helper.ensure_ascii_build_root(project, create=True)
         assert got is not None, "应能建出 junction"
@@ -343,13 +343,13 @@ class TestEnsureAsciiBuildRoot:
 
     def test_reuses_existing_correct_junction(self, helper, ascii_tmp, monkeypatch):
         """幂等：已存在且指向正确时复用，不删不重建。"""
-        project = ascii_tmp / "弹幕键盘V2"
+        project = ascii_tmp / "幕键"
         project.mkdir()
         (project / "main.spec").write_text("# spec", encoding="utf-8")
 
         link_home = ascii_tmp / "ascii_home"
         link_home.mkdir()
-        monkeypatch.setenv("DANMAKU_KB_BUILD_LINK", str(link_home))
+        monkeypatch.setenv("SCREENKEY_BUILD_LINK", str(link_home))
 
         first = helper.ensure_ascii_build_root(project, create=True)
         assert first is not None
@@ -369,13 +369,13 @@ class TestEnsureAsciiBuildRoot:
 
     def test_rebuilds_junction_pointing_elsewhere(self, helper, ascii_tmp, monkeypatch):
         """已存在但指向别处 → 删掉重建，而不是将就用错的。"""
-        project = ascii_tmp / "弹幕键盘V2"
+        project = ascii_tmp / "幕键"
         project.mkdir()
         (project / "main.spec").write_text("# spec", encoding="utf-8")
 
         link_home = ascii_tmp / "ascii_home"
         link_home.mkdir()
-        monkeypatch.setenv("DANMAKU_KB_BUILD_LINK", str(link_home))
+        monkeypatch.setenv("SCREENKEY_BUILD_LINK", str(link_home))
 
         # 先建一个指向别处的 junction
         wrong = ascii_tmp / "wrong_target"
@@ -401,7 +401,7 @@ class TestEnsureAsciiBuildRoot:
 
 class TestPickLinkPath:
     def test_env_var_wins(self, helper, ascii_tmp, monkeypatch):
-        monkeypatch.setenv("DANMAKU_KB_BUILD_LINK", str(ascii_tmp))
+        monkeypatch.setenv("SCREENKEY_BUILD_LINK", str(ascii_tmp))
         got = helper._pick_link_path()
         assert got is not None
         assert got.parent == ascii_tmp.resolve()
@@ -411,14 +411,14 @@ class TestPickLinkPath:
         """候选位置自己含非 ASCII 就没意义，必须跳过。"""
         bad = ascii_tmp / "中文目录"
         bad.mkdir()
-        monkeypatch.setenv("DANMAKU_KB_BUILD_LINK", str(bad))
+        monkeypatch.setenv("SCREENKEY_BUILD_LINK", str(bad))
         got = helper._pick_link_path()
         assert got is None or helper.is_ascii_path(got), (
             "含非 ASCII 的候选位置不该被选中"
         )
 
     def test_empty_env_var_is_skipped(self, helper, monkeypatch):
-        monkeypatch.setenv("DANMAKU_KB_BUILD_LINK", "")
+        monkeypatch.setenv("SCREENKEY_BUILD_LINK", "")
         got = helper._pick_link_path()
         # 会回落到 %TEMP% 等候选；只要不崩且结果（若有）是 ASCII 即可
         assert got is None or helper.is_ascii_path(got)
@@ -476,7 +476,7 @@ class TestCliContract:
 
     def test_check_mode_fails_for_non_ascii_project(self, ascii_tmp):
         """非 ASCII 且 --check → 退出码 1（调用方据此报错停下）。"""
-        project = ascii_tmp / "弹幕键盘V2"
+        project = ascii_tmp / "幕键"
         project.mkdir()
         proc = self._run("--project-root", str(project), "--check")
         assert proc.returncode == 1

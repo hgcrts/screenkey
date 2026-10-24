@@ -116,12 +116,20 @@ class TestBrotliPinIsReal:
         )
         assert any("1.0.9" in r for r in brotli_reqs), brotli_reqs
 
-    def test_readme_mentions_the_compile_requirement(self):
-        """README 必须提醒这一点，否则用户会在安装时被非预期编译卡住。"""
-        readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
-        assert "brotli" in readme.lower(), "README 没提 brotli 的安装问题"
+    def test_docs_mention_the_compile_requirement(self):
+        """文档必须提醒这一点，否则用户会在安装时被非预期编译卡住。
+
+        README 在 v3.0.0 精简成使用者简版后，这段安装细节搬进了
+        ``docs/开发文档.md``，所以两处都要看（任一处写清楚即可）。
+        """
+        sources = [
+            (PROJECT_ROOT / "README.md").read_text(encoding="utf-8"),
+            (PROJECT_ROOT / "docs" / "开发文档.md").read_text(encoding="utf-8"),
+        ]
+        joined = "\n".join(sources)
+        assert "brotli" in joined.lower(), "文档没提 brotli 的安装问题"
         # 必须明确说不要升到 1.2.0（否则与 blivedm 的锁定冲突）
-        assert "1.2.0" in readme, "README 没说明「不要升到 1.2.0」"
+        assert "1.2.0" in joined, "文档没说明「不要升到 1.2.0」"
 
     def test_requirements_mentions_the_compile_requirement(self, requirements_text):
         assert "1.0.9" in requirements_text, "requirements.txt 没提 brotli 1.0.9 的编译成本"

@@ -13,7 +13,7 @@
 
 from __future__ import annotations
 
-from danmaku_kb.login.douyin import (
+from screenkey.login.douyin import (
     IMPORTANT_COOKIE_NAMES,
     build_cookie_header,
     check_cookie_text,

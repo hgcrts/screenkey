@@ -10,7 +10,7 @@
 
 1. **完全无声**：环境不对时程序什么也不说，用户只能怀疑程序坏了。现在要求
    引擎和界面都能把"注入会被系统丢弃"说出来，并且**每次运行只说一次**。
-2. **配置永远存不下来**：``~/.danmaku_kb`` 建不出来时旧实现每次 ``save()``
+2. **配置永远存不下来**：``~/.screenkey`` 建不出来时旧实现每次 ``save()``
    都报一次错，用户的设置全部丢失。现在要求自动回落到一个真能写的目录。
 
 全部离线：不联网、不开界面（离屏）、不发真实按键。需要 PyQt5 的用例在缺失
@@ -24,12 +24,12 @@ from pathlib import Path
 
 import pytest
 
-from danmaku_kb import engine as engine_mod
-from danmaku_kb.config import manager as manager_mod
-from danmaku_kb.config.manager import ConfigManager, writable_config_dir
-from danmaku_kb.engine import DanmakuKeyboardEngine
-from danmaku_kb.input import keycodes
-from danmaku_kb.input.window import WindowInfo
+from screenkey import engine as engine_mod
+from screenkey.config import manager as manager_mod
+from screenkey.config.manager import ConfigManager, writable_config_dir
+from screenkey.engine import ScreenKeyEngine
+from screenkey.input import keycodes
+from screenkey.input.window import WindowInfo
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC = PROJECT_ROOT / "src"
@@ -46,7 +46,7 @@ def qt():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE, "PyQt5 已装但探测为不可用，qt_env 的探测逻辑有问题"
     configure_qt_environment()
@@ -64,8 +64,8 @@ def isolated_manager(qt, tmp_path):
     return manager
 
 
-def _engine(**kwargs) -> DanmakuKeyboardEngine:
-    eng = DanmakuKeyboardEngine(**kwargs)
+def _engine(**kwargs) -> ScreenKeyEngine:
+    eng = ScreenKeyEngine(**kwargs)
     eng.dry_run = False
     return eng
 
@@ -212,7 +212,7 @@ class TestEngineEnvironmentWarning:
         monkeypatch.setattr(
             engine_mod, "injection_environment_problem", lambda: "受限环境"
         )
-        eng = DanmakuKeyboardEngine()
+        eng = ScreenKeyEngine()
         eng.dry_run = True
         seen: list = []
         eng.on_event = seen.append
@@ -308,7 +308,7 @@ class TestEngineForegroundIntegrityCheck:
             "get_foreground_window",
             lambda: pytest.fail("dry_run 下不该去查前台窗口权限"),
         )
-        eng = DanmakuKeyboardEngine()
+        eng = ScreenKeyEngine()
         eng.dry_run = True
         eng.on_event = lambda event: None
         eng._check_foreground_integrity()
@@ -329,7 +329,7 @@ class TestConfigDirFallback:
     @pytest.fixture(autouse=True)
     def _clean_env(self, monkeypatch):
         """受测环境里 `~` 本来就不可写，测试必须显式控制这条分支。"""
-        monkeypatch.delenv("DANMAKU_KB_CONFIG_DIR", raising=False)
+        monkeypatch.delenv("SCREENKEY_CONFIG_DIR", raising=False)
         monkeypatch.setattr(manager_mod, "_fallback_warned", set())
 
     def test_uses_preferred_when_writable(self, monkeypatch, tmp_path):
@@ -363,7 +363,7 @@ class TestConfigDirFallback:
     def test_explicit_override_is_never_probed(self, monkeypatch, tmp_path):
         """用户显式指定的目录照用——写不进去要报错，而不是偷偷换地方。"""
         override = tmp_path / "explicit"
-        monkeypatch.setenv("DANMAKU_KB_CONFIG_DIR", str(override))
+        monkeypatch.setenv("SCREENKEY_CONFIG_DIR", str(override))
         monkeypatch.setattr(
             manager_mod, "_probe_writable", lambda path: pytest.fail("显式指定不该探测")
         )
@@ -398,7 +398,7 @@ class TestConfigDirFallback:
 # ===================================================================== 界面接线
 class TestWarningSurfaces:
     def test_bridge_forwards_warning_signal(self, qt):
-        from danmaku_kb.ui.worker import EngineBridge
+        from screenkey.ui.worker import EngineBridge
 
         eng = _engine()
         bridge = EngineBridge(eng)
@@ -408,7 +408,7 @@ class TestWarningSurfaces:
         assert seen == ["注入会被系统丢弃"]
 
     def test_warning_is_not_routed_to_error_signal(self, qt):
-        from danmaku_kb.ui.worker import EngineBridge
+        from screenkey.ui.worker import EngineBridge
 
         eng = _engine()
         bridge = EngineBridge(eng)
@@ -418,7 +418,7 @@ class TestWarningSurfaces:
         assert errors == [], "警告走警告信号，不能混进错误信号"
 
     def test_main_window_shows_warning_in_log_and_status(self, qt, isolated_manager):
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         win = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         try:
@@ -429,7 +429,7 @@ class TestWarningSurfaces:
             win.close()
 
     def test_main_window_checks_environment_at_startup(self, qt, isolated_manager, monkeypatch):
-        from danmaku_kb.ui import main_window as mw_mod
+        from screenkey.ui import main_window as mw_mod
 
         monkeypatch.setattr(mw_mod, "injection_environment_problem", lambda: "沙箱环境受限")
         win = mw_mod.MainWindow(
@@ -443,7 +443,7 @@ class TestWarningSurfaces:
             win.close()
 
     def test_main_window_silent_when_environment_ok(self, qt, isolated_manager, monkeypatch):
-        from danmaku_kb.ui import main_window as mw_mod
+        from screenkey.ui import main_window as mw_mod
 
         monkeypatch.setattr(mw_mod, "injection_environment_problem", lambda: "")
         win = mw_mod.MainWindow(

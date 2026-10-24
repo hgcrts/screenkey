@@ -15,8 +15,8 @@ import time
 
 import pytest
 
-from danmaku_kb.login import bilibili_qr, qr_image
-from danmaku_kb.login.bilibili_qr import (
+from screenkey.login import bilibili_qr, qr_image
+from screenkey.login.bilibili_qr import (
     QRCodeSession,
     QRState,
     LoginResult,

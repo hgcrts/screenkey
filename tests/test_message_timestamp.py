@@ -39,7 +39,7 @@ def qt():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE
     configure_qt_environment()
@@ -66,7 +66,7 @@ class TestTimestampIsAlwaysDatetime:
         ],
     )
     def test_constructor_normalizes(self, label, raw):
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         msg = DanmakuMessage(content="666", timestamp=raw)
         assert isinstance(msg.timestamp, datetime), f"{label} 没被规整成 datetime"
@@ -74,7 +74,7 @@ class TestTimestampIsAlwaysDatetime:
     @pytest.mark.parametrize("raw", [None, "", "not-a-time", "半夜"])
     def test_garbage_falls_back_to_datetime_not_crash(self, raw):
         """垃圾输入不抛异常，也不留下"非 datetime"的字段。"""
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         before = datetime.now()
         msg = DanmakuMessage(content="666", timestamp=raw)
@@ -83,7 +83,7 @@ class TestTimestampIsAlwaysDatetime:
         assert msg.timestamp.year >= before.year
 
     def test_omitted_timestamp_is_datetime(self):
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         assert isinstance(DanmakuMessage(content="666").timestamp, datetime)
 
@@ -92,7 +92,7 @@ class TestTimestampIsAlwaysDatetime:
 
         这是"单位猜错"最容易出错的地方：毫秒值当秒用会跑到公元 58000 年。
         """
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         seconds = DanmakuMessage(content="x", timestamp=1791000000)
         millis = DanmakuMessage(content="x", timestamp=1791000000000)
@@ -100,13 +100,13 @@ class TestTimestampIsAlwaysDatetime:
         assert seconds.timestamp.year == 2026
 
     def test_system_message_timestamp_is_datetime(self):
-        from danmaku_kb.danmaku.message import make_system_message
+        from screenkey.danmaku.message import make_system_message
 
         assert isinstance(make_system_message("已连接").timestamp, datetime)
 
     def test_evolved_and_with_content_keep_datetime(self):
         """``evolved``/``with_content`` 走 ``replace``，但 ``__post_init__`` 仍会跑。"""
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         msg = DanmakuMessage(content="666", timestamp=1791000000.0)
         assert isinstance(msg.evolved(content="777").timestamp, datetime)
@@ -118,7 +118,7 @@ class TestTimestampIsAlwaysDatetime:
         修复前这里是 ``datetime.fromtimestamp(msg.timestamp or 0)``，
         对 datetime 会抛 TypeError。
         """
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         msg = DanmakuMessage(content="666")
         assert len(msg.timestamp.strftime("%H:%M:%S")) == 8
@@ -137,7 +137,7 @@ class TestTimestampIsAlwaysDatetime:
         """``__post_init__`` 用 ``object.__setattr__``，但不能破坏冻结语义。"""
         import dataclasses
 
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         msg = DanmakuMessage(content="666")
         with pytest.raises(dataclasses.FrozenInstanceError):
@@ -148,7 +148,7 @@ class TestFromDictPreservesTimestamp:
     """``from_dict`` 曾经自己手写三分支，把**数字时间戳静默丢弃**换成"此刻"。"""
 
     def test_numeric_timestamp_survives(self):
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         msg = DanmakuMessage.from_dict({"content": "平台原始", "timestamp": 1791000000000})
         assert isinstance(msg.timestamp, datetime)
@@ -156,13 +156,13 @@ class TestFromDictPreservesTimestamp:
         assert msg.timestamp == DanmakuMessage(content="x", timestamp=1791000000).timestamp
 
     def test_iso_string_survives(self):
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         msg = DanmakuMessage.from_dict({"content": "x", "timestamp": "2026-10-10T19:25:25"})
         assert msg.timestamp == datetime(2026, 10, 10, 19, 25, 25)
 
     def test_roundtrip_is_stable(self):
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         original = DanmakuMessage(content="hello", timestamp=1791000000.0)
         restored = DanmakuMessage.from_dict(original.to_dict())
@@ -170,7 +170,7 @@ class TestFromDictPreservesTimestamp:
         assert isinstance(restored.timestamp, datetime)
 
     def test_missing_timestamp_does_not_crash(self):
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         assert isinstance(DanmakuMessage.from_dict({"content": "x"}).timestamp, datetime)
 
@@ -181,21 +181,21 @@ class TestDanmakuWindowDoesNotCrash:
 
     @pytest.fixture
     def window(self, qt):
-        from danmaku_kb.config.models import DisplayConfig
-        from danmaku_kb.ui.danmaku_window import DanmakuWindow
+        from screenkey.config.models import DisplayConfig
+        from screenkey.ui.danmaku_window import DanmakuWindow
 
         win = DanmakuWindow(config=DisplayConfig())
         yield win
         win.close()
 
     def _msg(self, **kw):
-        from danmaku_kb.danmaku.message import DanmakuMessage
+        from screenkey.danmaku.message import DanmakuMessage
 
         return DanmakuMessage(content=kw.pop("content", "666"), **kw)
 
     def test_append_with_show_timestamp_enabled(self, window):
         """``show_timestamp`` 默认 True——默认配置下这条路径必崩。"""
-        from danmaku_kb.config.models import DisplayConfig
+        from screenkey.config.models import DisplayConfig
 
         assert DisplayConfig().show_timestamp is True, "默认必须开启才符合当时崩溃的现场"
         window.append(self._msg(timestamp=1791000000000), actionable=True, matched="6")
@@ -208,7 +208,7 @@ class TestDanmakuWindowDoesNotCrash:
         window.append(self._msg(timestamp=raw))
 
     def test_append_with_timestamp_disabled(self, window):
-        from danmaku_kb.config.models import DisplayConfig
+        from screenkey.config.models import DisplayConfig
 
         window.apply_config(DisplayConfig(show_timestamp=False))
         window.append(self._msg(timestamp=1791000000000))
@@ -263,11 +263,11 @@ class TestMainWindowMessagePathDoesNotCrash:
     """从 ``MainWindow._on_message`` 一路走到弹幕窗——真实崩溃发生的那条链。"""
 
     def test_on_message_with_numeric_timestamp(self, qt, tmp_path, monkeypatch):
-        monkeypatch.setenv("DANMAKU_KB_CONFIG_DIR", str(tmp_path / "cfg"))
+        monkeypatch.setenv("SCREENKEY_CONFIG_DIR", str(tmp_path / "cfg"))
 
-        from danmaku_kb.config.manager import ConfigManager
-        from danmaku_kb.danmaku.message import DanmakuMessage
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.config.manager import ConfigManager
+        from screenkey.danmaku.message import DanmakuMessage
+        from screenkey.ui.main_window import MainWindow
 
         manager = ConfigManager(config_dir=tmp_path / "cfg", auto_save=False)
         manager.load()

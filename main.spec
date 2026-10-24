@@ -1,25 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""弹幕键盘 V2 —— PyInstaller 打包配置。
+"""幕键 —— PyInstaller 打包配置。
 
 用法（在项目根目录）::
 
     .venv\\Scripts\\python.exe -m PyInstaller --noconfirm --clean main.spec
 
-产物是 onedir 形态：``dist/弹幕键盘V2/弹幕键盘V2.exe`` 加一个 ``_internal`` 目录，
+产物是 onedir 形态：``dist/幕键/ScreenKey.exe`` 加一个 ``_internal`` 目录，
 必须整个目录一起拷贝，不能只拿走 exe。
 
 关于 data/ 目录
 --------------
-``src/danmaku_kb/data/sign.js`` 是抖音弹幕连接离不开的资源：
+``src/screenkey/data/sign.js`` 是抖音弹幕连接离不开的资源：
 
 * ``sign.js`` —— **第三方、已混淆的抖音 SDK 代码**（``webmssdk.js`` 系列，480KB+）。
   它在 WebSocket URL 上计算 ``signature`` 参数，纯 Python 无法复现。
   这里随包携带**仅用于研究学习**，版权属于抖音，请勿商用或二次分发。
-  想换成自己的副本，可设环境变量 ``DANMAKU_KB_SIGN_JS`` 指向你的文件。
+  想换成自己的副本，可设环境变量 ``SCREENKEY_SIGN_JS`` 指向你的文件。
 
 ``danmaku/signature.py`` 用 ``Path(__file__).resolve().parent.parent / "data"``
-定位它；打包后模块的 ``__file__`` 落在 ``<_MEIPASS>/danmaku_kb/danmaku/...``，
-所以这里的 datas 目标目录必须写成 ``danmaku_kb/data``，两边才对得上。
+定位它；打包后模块的 ``__file__`` 落在 ``<_MEIPASS>/screenkey/danmaku/...``，
+所以这里的 datas 目标目录必须写成 ``screenkey/data``，两边才对得上。
 """
 
 import sys
@@ -27,7 +27,7 @@ from pathlib import Path
 
 # SPECPATH 由 PyInstaller 注入，指向本 spec 所在目录（项目根目录）
 ROOT = Path(SPECPATH).resolve()
-PKG = ROOT / "src" / "danmaku_kb"
+PKG = ROOT / "src" / "screenkey"
 DATA = PKG / "data"
 
 # ----------------------------------------------------------------------
@@ -35,7 +35,9 @@ DATA = PKG / "data"
 # ----------------------------------------------------------------------
 datas = [
     # (源文件, 打包后的相对目录)
-    (str(DATA / "sign.js"), "danmaku_kb/data"),
+    (str(DATA / "sign.js"), "screenkey/data"),
+    # 应用图标（窗口图标在运行时读 PNG；exe 图标由 EXE(icon=...) 嵌入）
+    (str(PKG / "assets" / "icon.png"), "screenkey/assets"),
 ]
 
 # ----------------------------------------------------------------------
@@ -92,7 +94,8 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="弹幕键盘V2",
+    name="ScreenKey",
+    icon=str(PKG / "assets" / "icon.ico"),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -113,5 +116,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="弹幕键盘V2",
+    name="ScreenKey",
 )

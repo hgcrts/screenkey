@@ -21,11 +21,11 @@ from pathlib import Path
 
 import pytest
 
-from danmaku_kb import __version__ as PKG_VERSION
+from screenkey import __version__ as PKG_VERSION
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC = PROJECT_ROOT / "src"
-MAIN_PY = SRC / "danmaku_kb" / "main.py"
+MAIN_PY = SRC / "screenkey" / "main.py"
 LAUNCHER = PROJECT_ROOT / "启动.bat"
 
 
@@ -71,7 +71,7 @@ class TestExitCodes:
         """1 与 2 必须不同，否则"看退出码区分原因"这个设计就不成立。"""
         sys.path.insert(0, str(SRC))
         try:
-            from danmaku_kb.main import EXIT_ARGS, EXIT_ENV, EXIT_OK, EXIT_SELFTEST
+            from screenkey.main import EXIT_ARGS, EXIT_ENV, EXIT_OK, EXIT_SELFTEST
         finally:
             sys.path.remove(str(SRC))
 
@@ -100,15 +100,15 @@ class TestExitCodes:
         """`-h` 走的是显示帮助路径，必须是 0（不能跟着 error() 变成 1）。"""
         code, out, _err = run_cli("--help")
         assert code == 0, f"--help 应退出 0，实际 {code}"
-        assert "usage: danmaku-kb" in out
+        assert "usage: screenkey" in out
 
 
 class TestBootstrapWithoutPythonPath:
-    """`main.py` 必须能自己找到 `danmaku_kb` 包，不能依赖外部 `PYTHONPATH`。
+    """`main.py` 必须能自己找到 `screenkey` 包，不能依赖外部 `PYTHONPATH`。
 
     这一组是用户实测缺陷（m03604「启动.bat 无法正常启动」）的回归测试。
-    原先 `main.py` 把 `Path(__file__).parent`（也就是包目录 `src\\danmaku_kb`）
-    插进 `sys.path`，而 `from danmaku_kb import ...` 需要的是它的**父目录**
+    原先 `main.py` 把 `Path(__file__).parent`（也就是包目录 `src\\screenkey`）
+    插进 `sys.path`，而 `from screenkey import ...` 需要的是它的**父目录**
     `src`，于是直接跑入口必然 `ModuleNotFoundError`。
 
     这个缺陷能长期存活，恰恰是因为**所有测试都替它设好了 PYTHONPATH**
@@ -158,9 +158,9 @@ class TestBootstrapWithoutPythonPath:
         )
 
     def test_module_form_still_works(self):
-        """`python -m danmaku_kb.main` 也必须仍然可用（两种入口都要活）。"""
+        """`python -m screenkey.main` 也必须仍然可用（两种入口都要活）。"""
         proc = subprocess.run(
-            [sys.executable, "-m", "danmaku_kb.main", "--version"],
+            [sys.executable, "-m", "screenkey.main", "--version"],
             cwd=str(SRC),
             capture_output=True,
             text=True,
@@ -193,7 +193,7 @@ class TestBootstrapWithoutPythonPath:
         assert proc.stdout.count("[OK]") == 11
 
     def test_bootstrap_inserts_src_not_package_dir(self):
-        """直接锁住机制本身：插进 `sys.path` 的必须是 `src`，不是 `src/danmaku_kb`。
+        """直接锁住机制本身：插进 `sys.path` 的必须是 `src`，不是 `src/screenkey`。
 
         前几项是行为断言，这一项是**机制断言** —— 即使将来有人把目录结构改了
         而行为恰好还能通过，只要插入的层级不对就会在这里失败。
@@ -216,9 +216,9 @@ class TestBootstrapWithoutPythonPath:
         assert proc.returncode == 0, f"探针失败：\n{proc.stdout}{proc.stderr}"
         entries = set(proc.stdout.strip().splitlines()[-1].split("|"))
         assert str(SRC) in entries, (
-            f"sys.path 里没有 src（{SRC}）—— 入口无法导入 danmaku_kb：\n{entries}"
+            f"sys.path 里没有 src（{SRC}）—— 入口无法导入 screenkey：\n{entries}"
         )
-        assert str(SRC / "danmaku_kb") not in entries, (
+        assert str(SRC / "screenkey") not in entries, (
             "sys.path 里出现的是包目录本身而不是它的父目录，"
             "这正是 m03604 那个 ModuleNotFoundError 的根因"
         )
@@ -268,7 +268,7 @@ class TestCheckEnv:
     def test_parse_args_exposes_flag(self):
         sys.path.insert(0, str(SRC))
         try:
-            from danmaku_kb.main import parse_args
+            from screenkey.main import parse_args
 
             assert parse_args(["--check-env"]).check_env is True
             assert parse_args([]).check_env is False
@@ -278,7 +278,7 @@ class TestCheckEnv:
 
     def test_check_env_runs_and_exits_zero(self, run_cli, tmp_path):
         # 显式指定配置目录：这个检查会真的写一次配置，别污染开发机上的
-        # `~/.danmaku_kb`，也别在项目里留下 `.danmaku_kb`。
+        # `~/.screenkey`，也别在项目里留下 `.screenkey`。
         code, out, _err = run_cli("--check-env", "--config-dir", str(tmp_path / "cfg"))
         assert code == 0, f"--check-env 应始终退出 0（只报告不改动）：\n{out}"
         for token in ("注入环境检查", "Win32 注入 API", "管理员权限", "实际使用目录", "写入测试"):
@@ -348,7 +348,7 @@ class TestLauncherBat:
         assert lone_lf == 0, f"启动.bat 里有 {lone_lf} 个孤立 LF，应为纯 CRLF"
         assert not raw.startswith(b"\xef\xbb\xbf"), "启动.bat 不能带 UTF-8 BOM"
         text = raw.decode("gbk")
-        assert "弹幕键盘" in text, "GBK 解码后看不到中文提示 —— 文件可能被存成了 UTF-8"
+        assert "幕键" in text, "GBK 解码后看不到中文提示 —— 文件可能被存成了 UTF-8"
 
     def test_selftest_branch_runs_and_reports_success(self):
         """`启动.bat --selftest` 必须真的跑通并报告通过。
@@ -435,7 +435,7 @@ class TestConsoleEncoding:
     def test_emoji_in_output_does_not_crash(self):
         code = (
             "import sys; sys.path.insert(0, {src!r});"
-            "from danmaku_kb.main import _forgiving_std_streams as f;"
+            "from screenkey.main import _forgiving_std_streams as f;"
             "f(); print('窗口标题 🔍 测试')"
         ).format(src=str(SRC))
         env = dict(os.environ)

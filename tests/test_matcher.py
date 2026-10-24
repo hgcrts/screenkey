@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from danmaku_kb.input.mappings import (
+from screenkey.input.mappings import (
     KeyAction,
     KeyMapping,
     MatchMode,
@@ -14,7 +14,7 @@ from danmaku_kb.input.mappings import (
     MouseButton,
     MouseMapping,
 )
-from danmaku_kb.input.matcher import (
+from screenkey.input.matcher import (
     CooldownTracker,
     collapse_repeats,
     detect_repeated_char,
@@ -270,14 +270,14 @@ class TestMultiTrigger:
 
     def test_default_mappings_have_no_comma_triggers(self):
         """默认映射里没有含逗号的触发词 —— 所以多触发词不会改变既有行为。"""
-        from danmaku_kb.input.mappings import default_key_mappings, default_mouse_mappings
+        from screenkey.input.mappings import default_key_mappings, default_mouse_mappings
 
         all_mappings = list(default_key_mappings()) + list(default_mouse_mappings())
         assert [m.trigger for m in all_mappings if "," in m.trigger or "，" in m.trigger] == []
 
     def test_default_666666_still_long_presses(self):
         """回归：默认映射下 666666 仍命中 "6" 长按。"""
-        from danmaku_kb.input.mappings import default_key_mappings
+        from screenkey.input.mappings import default_key_mappings
 
         found = match_content("666666", default_key_mappings(), max_results=3)
         assert found and found[0].trigger == "6" and found[0].is_long_press

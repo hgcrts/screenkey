@@ -34,7 +34,7 @@ def qt():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE, "PyQt5 已装但探测为不可用，qt_env 的探测逻辑有问题"
     configure_qt_environment()
@@ -48,7 +48,7 @@ def qt():
 @pytest.fixture
 def no_modals(monkeypatch):
     """``QMessageBox.warning`` 在离屏下是模态的，会把测试挂死。"""
-    import danmaku_kb.ui.filter_editor as fe
+    import screenkey.ui.filter_editor as fe
 
     calls = []
 
@@ -63,7 +63,7 @@ def no_modals(monkeypatch):
 
 
 def _engine_with(*rules):
-    from danmaku_kb.filters.rules import FilterEngine
+    from screenkey.filters.rules import FilterEngine
 
     return FilterEngine(list(rules))
 
@@ -71,8 +71,8 @@ def _engine_with(*rules):
 class TestCancelDoesNotMutate:
     def test_cancel_leaves_engine_untouched(self, qt):
         """在对话框里改名后点取消，引擎里的规则名不能变。"""
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(FilterRule(name="原名", action=FilterAction.ALLOW))
         dialog = FilterEditorDialog(engine)
@@ -84,14 +84,14 @@ class TestCancelDoesNotMutate:
         assert engine.rules[0].name == "原名"
 
     def test_cancel_leaves_conditions_untouched(self, qt):
-        from danmaku_kb.filters.rules import (
+        from screenkey.filters.rules import (
             CompareOp,
             Condition,
             FieldMatch,
             FilterAction,
             FilterRule,
         )
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         rule = FilterRule(
             name="r",
@@ -114,8 +114,8 @@ class TestCancelDoesNotMutate:
         assert engine.rules[0].conditions[0].value == "原值"
 
     def test_engine_returns_independent_copy(self, qt):
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(FilterRule(name="a", action=FilterAction.ALLOW))
         dialog = FilterEditorDialog(engine)
@@ -129,14 +129,14 @@ class TestCancelDoesNotMutate:
 class TestRowSwitchKeepsInput:
     def test_conditions_survive_row_switch(self, qt):
         """在第 0 行输入条件，切到第 1 行再切回来，输入还在。"""
-        from danmaku_kb.filters.rules import (
+        from screenkey.filters.rules import (
             CompareOp,
             Condition,
             FieldMatch,
             FilterAction,
             FilterRule,
         )
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(
@@ -156,8 +156,8 @@ class TestRowSwitchKeepsInput:
         assert dialog.cond_table.cellWidget(0, 2).text() == "用户刚敲的"
 
     def test_rule_name_survives_row_switch(self, qt):
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(name="一", action=FilterAction.ALLOW),
@@ -172,8 +172,8 @@ class TestRowSwitchKeepsInput:
         assert dialog.name_edit.text() == "改过的"
 
     def test_switch_does_not_write_into_wrong_rule(self, qt):
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(name="一", action=FilterAction.ALLOW),
@@ -188,14 +188,14 @@ class TestRowSwitchKeepsInput:
 
 class TestStructuralEditsKeepInput:
     def test_add_condition_keeps_existing_input(self, qt):
-        from danmaku_kb.filters.rules import (
+        from screenkey.filters.rules import (
             CompareOp,
             Condition,
             FieldMatch,
             FilterAction,
             FilterRule,
         )
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(
@@ -213,14 +213,14 @@ class TestStructuralEditsKeepInput:
         assert dialog.cond_table.cellWidget(0, 2).text() == "第一个条件"
 
     def test_remove_condition_keeps_other_input(self, qt):
-        from danmaku_kb.filters.rules import (
+        from screenkey.filters.rules import (
             CompareOp,
             Condition,
             FieldMatch,
             FilterAction,
             FilterRule,
         )
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(
@@ -243,8 +243,8 @@ class TestStructuralEditsKeepInput:
         assert dialog.cond_table.cellWidget(0, 2).text() == "要保留的"
 
     def test_add_rule_keeps_current_input(self, qt):
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(FilterRule(name="一", action=FilterAction.ALLOW))
         dialog = FilterEditorDialog(engine)
@@ -256,8 +256,8 @@ class TestStructuralEditsKeepInput:
         assert len(dialog._rules) == 2
 
     def test_move_rule_keeps_input(self, qt):
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(name="一", action=FilterAction.ALLOW),
@@ -274,8 +274,8 @@ class TestStructuralEditsKeepInput:
 class TestComboSignalsDoNotCorruptRows:
     def test_action_combo_change_only_touches_current_row(self, qt):
         """``currentIndexChanged`` 带一个 int；旧代码把它当成行号。"""
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(name="一", action=FilterAction.ALLOW),
@@ -293,8 +293,8 @@ class TestComboSignalsDoNotCorruptRows:
         assert dialog._rules[1].action is FilterAction.ALLOW
 
     def test_match_mode_change_only_touches_current_row(self, qt):
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(name="一", action=FilterAction.ALLOW),
@@ -310,14 +310,14 @@ class TestComboSignalsDoNotCorruptRows:
 
 class TestAcceptValidation:
     def test_bad_regex_blocks_accept(self, qt, no_modals):
-        from danmaku_kb.filters.rules import (
+        from screenkey.filters.rules import (
             CompareOp,
             Condition,
             FieldMatch,
             FilterAction,
             FilterRule,
         )
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         engine = _engine_with(
             FilterRule(
@@ -335,8 +335,8 @@ class TestAcceptValidation:
         assert len(dialog._rules) == 1
 
     def test_valid_rules_accept(self, qt, no_modals):
-        from danmaku_kb.filters.rules import FilterAction, FilterRule
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterAction, FilterRule
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         dialog = FilterEditorDialog(_engine_with(FilterRule(name="ok", action=FilterAction.ALLOW)))
         dialog._on_accept()
@@ -346,16 +346,16 @@ class TestAcceptValidation:
 
 class TestDefaults:
     def test_no_engine_uses_default_rules(self, qt):
-        from danmaku_kb.filters.rules import FilterEngine
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterEngine
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         dialog = FilterEditorDialog(None)
         assert len(dialog._rules) == len(FilterEngine.default().rules)
 
     def test_default_rules_not_mutated_by_editing(self, qt):
         """没传 engine 时也不能改到 ``FilterEngine.default()`` 的共享实例。"""
-        from danmaku_kb.filters.rules import FilterEngine
-        from danmaku_kb.ui.filter_editor import FilterEditorDialog
+        from screenkey.filters.rules import FilterEngine
+        from screenkey.ui.filter_editor import FilterEditorDialog
 
         before = [r.name for r in FilterEngine.default().rules]
         dialog = FilterEditorDialog(None)

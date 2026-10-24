@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import gzip
 
-from danmaku_kb.danmaku.douyin import (
+from screenkey.danmaku.douyin import (
     HEADER_COMPRESS_TYPE,
     HEADER_INTERNAL_EXT,
     MSG_METHOD,
@@ -22,7 +22,7 @@ from danmaku_kb.danmaku.douyin import (
     parse_push_frame,
     parse_response,
 )
-from danmaku_kb.danmaku.protobuf_lite import (
+from screenkey.danmaku.protobuf_lite import (
     encode_field_bytes,
     encode_field_string,
     encode_field_varint,
@@ -242,7 +242,7 @@ class TestCookieHygiene:
     """Cookie 头被 Morsel 文本污染会导致握手被拒（HTTP 200 / InvalidStatus）。"""
 
     def test_cookie_map_skips_set_cookie_attributes(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         fetcher.cookie = (
@@ -262,21 +262,21 @@ class TestCookieHygiene:
         真实症状：`ttwid=Set-Cookie: ttwid=1%7C...` 被当成合法值 ->
         跳过首页暖场 -> 带着畸形 Cookie 握手 -> 服务端 HTTP 200 拒绝升级。
         """
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         fetcher.cookie = "ttwid=Set-Cookie: ttwid=1%7Cabc; Domain=douyin.com"
         assert fetcher._ensure_ttwid() == ""
 
     def test_ensure_ttwid_accepts_real_value(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         fetcher.cookie = "UIFID=abc; ttwid=1%7CB7xt%7C1791625601%7C27c2c8f0; UIFID_TEMP=z"
         assert fetcher._ensure_ttwid() == "1%7CB7xt%7C1791625601%7C27c2c8f0"
 
     def test_ensure_ttwid_absent(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         fetcher.cookie = "UIFID=abc"
@@ -287,7 +287,7 @@ class TestSignatureFieldOrder:
     """签名 13 字段的顺序是协议的一部分，改顺序会算错签名。"""
 
     def test_sign_md5_fields_exact_order(self):
-        from danmaku_kb.danmaku.signature import SIGN_MD5_FIELDS
+        from screenkey.danmaku.signature import SIGN_MD5_FIELDS
 
         assert SIGN_MD5_FIELDS == (
             "live_id",
@@ -306,7 +306,7 @@ class TestSignatureFieldOrder:
         )
 
     def test_build_md5_param_missing_fields_become_empty(self):
-        from danmaku_kb.danmaku.signature import build_md5_param
+        from screenkey.danmaku.signature import build_md5_param
 
         text = build_md5_param({"live_id": "1", "aid": "6383", "room_id": "123"})
         assert text.startswith("live_id=1,aid=6383,")
@@ -315,7 +315,7 @@ class TestSignatureFieldOrder:
 
     def test_md5_hex_of_real_capture(self):
         """实测抓到的签名输入串，锁死 md5 结果。"""
-        from danmaku_kb.danmaku.signature import build_md5_param, md5_hex
+        from screenkey.danmaku.signature import build_md5_param, md5_hex
 
         params = {
             "live_id": "1",
@@ -344,7 +344,7 @@ class TestWsUrlParams:
     def _url_params(self):
         from urllib.parse import parse_qs, urlparse
 
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         # 注意：DouyinFetcher.room_id 是覆盖后的只读 property（读 _douyin_room_id），
@@ -389,7 +389,7 @@ class TestWsUrlParams:
         assert params["cursor"][0]
 
     def test_host_is_default(self):
-        from danmaku_kb.danmaku.douyin import DEFAULT_WS_HOST
+        from screenkey.danmaku.douyin import DEFAULT_WS_HOST
 
         assert "webcast100-ws-web-lq.douyin.com" in DEFAULT_WS_HOST
         assert DEFAULT_WS_HOST.endswith("/webcast/im/push/v2/")
@@ -399,7 +399,7 @@ class TestAckSelection:
     """internal_ext 在 Response 与 headersList 两处都可能出现，只认一个会漏 ack。"""
 
     def test_headers_internal_ext_used_when_response_lacks_it(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         inner = encode_field_string(2, "t-1")
@@ -417,7 +417,7 @@ class TestAckSelection:
         assert fields[2][0] == 7
 
     def test_response_internal_ext_wins_when_present(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         payload = encode_field_string(5, "internal_src:fromresponse") + encode_field_varint(9, 1)
@@ -431,7 +431,7 @@ class TestAckSelection:
         assert fields[8][0] == b"internal_src:fromresponse"
 
     def test_no_internal_ext_means_no_ack(self):
-        from danmaku_kb.danmaku.douyin import DouyinFetcher
+        from screenkey.danmaku.douyin import DouyinFetcher
 
         fetcher = DouyinFetcher()
         raw = _push_frame(payload=encode_field_string(2, "t-1"), log_id=1)

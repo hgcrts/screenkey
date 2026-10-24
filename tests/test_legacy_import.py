@@ -21,15 +21,15 @@ from pathlib import Path
 
 import pytest
 
-from danmaku_kb.config.manager import ConfigManager
-from danmaku_kb.input.mappings import (
+from screenkey.config.manager import ConfigManager
+from screenkey.input.mappings import (
     KeyMapping,
     MouseMapping,
     default_key_mappings,
 )
 
 #: 参考项目真实文件的绝对路径（本机存在时才跑那条"真文件"用例）
-REFERENCE_PROJECT = Path(r"E:\DSHwork\抖音加B站弹幕键盘")
+REFERENCE_PROJECT = Path(r"E:\DSHwork\抖音加B站幕键")
 REFERENCE_CONFIG = REFERENCE_PROJECT / "userdata" / "配置文件.json"
 
 #: 与参考项目真实文件同构的一条键盘映射（字段名逐个照抄）

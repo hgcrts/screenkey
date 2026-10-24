@@ -2,7 +2,7 @@
 """弹幕窗口「设置」：按消息类型开关 + 显示项的回归测试。
 
 背景（2026-10-23，B 站实测后用户提出）：弹幕列表一直没有"哪些消息要显示"
-的开关，进场/点赞刷屏时真正的聊天弹幕会被冲走；旧版程序（``抖音加B站弹幕键盘``）
+的开关，进场/点赞刷屏时真正的聊天弹幕会被冲走；旧版程序（``抖音加B站幕键``）
 的「筛选」对话框有 8 种类型的开关，本套件锁定新实现的关键行为：
 
 * 被关闭的类型不进待渲染队列、不进历史（导出时不夹带）；
@@ -29,7 +29,7 @@ if str(SRC) not in sys.path:
 
 # ---------------------------------------------------------------- 配置层
 def test_show_types_default_all_on():
-    from danmaku_kb.config.models import DANMAKU_TYPE_ORDER, DisplayConfig
+    from screenkey.config.models import DANMAKU_TYPE_ORDER, DisplayConfig
 
     cfg = DisplayConfig()
     assert cfg.show_types == {key: True for key in DANMAKU_TYPE_ORDER}
@@ -39,7 +39,7 @@ def test_show_types_default_all_on():
 
 def test_show_types_partial_dict_keeps_other_defaults():
     """只写想关掉的那一项时，其余类型必须保持默认的"开"。"""
-    from danmaku_kb.config.models import DisplayConfig
+    from screenkey.config.models import DisplayConfig
 
     cfg = DisplayConfig.from_dict({"show_types": {"gift": False}})
     assert cfg.show_types["gift"] is False
@@ -49,7 +49,7 @@ def test_show_types_partial_dict_keeps_other_defaults():
 
 def test_show_types_string_values_are_coerced():
     """手写 ``"off"`` / ``"false"`` 不能因为非空字符串被判为真。"""
-    from danmaku_kb.config.models import DisplayConfig
+    from screenkey.config.models import DisplayConfig
 
     cfg = DisplayConfig.from_dict({"show_types": {"enter": "off", "like": "false", "gift": "1"}})
     assert cfg.show_types["enter"] is False
@@ -58,7 +58,7 @@ def test_show_types_string_values_are_coerced():
 
 
 def test_unknown_type_still_enabled():
-    from danmaku_kb.config.models import DisplayConfig
+    from screenkey.config.models import DisplayConfig
 
     cfg = DisplayConfig.from_dict({"show_types": {"danmaku": False}})
     assert cfg.type_enabled("brand_new_type") is True
@@ -66,7 +66,7 @@ def test_unknown_type_still_enabled():
 
 
 def test_show_types_survive_from_dict_round_trip():
-    from danmaku_kb.config.models import DisplayConfig
+    from screenkey.config.models import DisplayConfig
 
     cfg = DisplayConfig()
     cfg.show_types["gift"] = False
@@ -79,7 +79,7 @@ def test_show_types_survive_from_dict_round_trip():
 
 # ---------------------------------------------------------------- 渲染层
 def test_danmaku_html_labels_non_chat_types():
-    from danmaku_kb.ui.theme import danmaku_html
+    from screenkey.ui.theme import danmaku_html
 
     plain = danmaku_html("你好", nickname="甲", timestamp="12:00:00", kind="danmaku")
     assert "〔" not in plain
@@ -94,7 +94,7 @@ def test_danmaku_html_labels_non_chat_types():
 def qt():
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     pytest.importorskip("PyQt5", reason="需要 PyQt5 才能测界面")
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE
     configure_qt_environment()
@@ -105,15 +105,15 @@ def qt():
 
 
 def _msg(kind, text="x"):
-    from danmaku_kb.danmaku.message import DanmakuMessage, MessageType
+    from screenkey.danmaku.message import DanmakuMessage, MessageType
 
     return DanmakuMessage(content=text, nickname="测试", platform="bilibili",
                           msg_type=MessageType.coerce(kind))
 
 
 def test_window_filters_disabled_types(qt):
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DanmakuWindow
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DanmakuWindow
 
     cfg = DisplayConfig.from_dict({"show_types": {"enter": False, "like": False}})
     win = DanmakuWindow(cfg)
@@ -130,8 +130,8 @@ def test_window_filters_disabled_types(qt):
 
 
 def test_window_apply_settings_updates_config_and_toolbar(qt):
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DanmakuWindow
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DanmakuWindow
 
     win = DanmakuWindow(DisplayConfig())
     received = []
@@ -160,8 +160,8 @@ def test_window_apply_settings_updates_config_and_toolbar(qt):
 
 
 def test_dialog_values_round_trip(qt):
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DisplaySettingsDialog
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DisplaySettingsDialog
 
     cfg = DisplayConfig()
     cfg.show_types["super_chat"] = False
@@ -183,7 +183,7 @@ def test_dialog_values_round_trip(qt):
 # ---------------------------------------------------------------- 窗口置顶
 def test_always_on_top_default_and_coercion():
     """置顶默认开；手写字符串/缺字段都按 ``_as_bool`` 规则走。"""
-    from danmaku_kb.config.models import DisplayConfig
+    from screenkey.config.models import DisplayConfig
 
     assert DisplayConfig().always_on_top is True
     assert DisplayConfig.from_dict({}).always_on_top is True
@@ -196,8 +196,8 @@ def test_always_on_top_default_and_coercion():
 def test_window_applies_topmost_flag_on_construction(qt):
     from PyQt5.QtCore import Qt
 
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DanmakuWindow
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DanmakuWindow
 
     on = DanmakuWindow(DisplayConfig.from_dict({"always_on_top": True}))
     off = DanmakuWindow(DisplayConfig.from_dict({"always_on_top": False}))
@@ -215,8 +215,8 @@ def test_pin_button_toggles_flag_and_persists_config(qt):
     """工具栏「置顶」：改 flags、写回配置、发 configChanged 供主窗口落盘。"""
     from PyQt5.QtCore import Qt
 
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DanmakuWindow
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DanmakuWindow
 
     win = DanmakuWindow(DisplayConfig.from_dict({"always_on_top": True}))
     received = []
@@ -238,8 +238,8 @@ def test_toggling_pin_on_visible_window_keeps_it_shown(qt):
     """已显示的窗口改 flags 后必须重新 show()，否则 Windows 上会直接消失。"""
     from PyQt5.QtCore import Qt
 
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DanmakuWindow
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DanmakuWindow
 
     win = DanmakuWindow(DisplayConfig.from_dict({"always_on_top": True}))
     try:
@@ -258,8 +258,8 @@ def test_toggling_pin_on_visible_window_keeps_it_shown(qt):
 def test_apply_config_syncs_pin_state(qt):
     from PyQt5.QtCore import Qt
 
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DanmakuWindow
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DanmakuWindow
 
     win = DanmakuWindow(DisplayConfig.from_dict({"always_on_top": False}))
     try:
@@ -273,8 +273,8 @@ def test_apply_config_syncs_pin_state(qt):
 
 
 def test_dialog_exposes_always_on_top(qt):
-    from danmaku_kb.config.models import DisplayConfig
-    from danmaku_kb.ui.danmaku_window import DisplaySettingsDialog
+    from screenkey.config.models import DisplayConfig
+    from screenkey.ui.danmaku_window import DisplaySettingsDialog
 
     dlg = DisplaySettingsDialog(DisplayConfig.from_dict({"always_on_top": True}))
     try:

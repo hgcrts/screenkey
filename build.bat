@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 
 REM ============================================================
-REM  弹幕键盘 V2 —— 用 PyInstaller 打包 exe
+REM  幕键 —— 用 PyInstaller 打包 exe
 REM
 REM  用法:
 REM    build.bat            按 main.spec 打包
@@ -41,7 +41,7 @@ if /i "%~1"=="--clean" set "DO_CLEAN=1"
 if /i "%~1"=="--check" set "CHECK_ONLY=1"
 
 echo ============================================
-echo    弹幕键盘 V2 - 打包
+echo    幕键 - 打包
 echo ============================================
 echo.
 
@@ -151,14 +151,14 @@ if not "%RC%"=="0" (
     goto :fail
 )
 
-echo [完成] 产物目录: %ROOT%dist\弹幕键盘V2
-if exist "%ROOT%dist\弹幕键盘V2\弹幕键盘V2.exe" (
-    echo        可执行文件: %ROOT%dist\弹幕键盘V2\弹幕键盘V2.exe
+echo [完成] 产物目录: %ROOT%dist\幕键
+if exist "%ROOT%dist\幕键\幕键.exe" (
+    echo        可执行文件: %ROOT%dist\幕键\幕键.exe
     echo.
     echo        可以这样验证:
-    echo            "%ROOT%dist\弹幕键盘V2\弹幕键盘V2.exe" --selftest
+    echo            "%ROOT%dist\幕键\幕键.exe" --selftest
 ) else (
-    echo        [提示] 没看到 弹幕键盘V2.exe，请自行检查 dist 目录内容。
+    echo        [提示] 没看到 幕键.exe，请自行检查 dist 目录内容。
 )
 goto :end
 

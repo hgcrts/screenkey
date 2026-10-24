@@ -40,7 +40,7 @@ def qt():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE, "PyQt5 已装但探测为不可用，qt_env 的探测逻辑有问题"
     configure_qt_environment()
@@ -54,7 +54,7 @@ def qt():
 def _keycodes():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
-    from danmaku_kb.input import keycodes
+    from screenkey.input import keycodes
 
     return keycodes
 
@@ -172,8 +172,8 @@ class TestSearchKeyNames:
 # ----------------------------------------------------------------------
 class TestKeyComboBoxBasics:
     def test_lists_every_key_with_display_text(self, qt):
-        from danmaku_kb.input.keycodes import all_key_names, key_display
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.input.keycodes import all_key_names, key_display
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         names = all_key_names()
@@ -183,14 +183,14 @@ class TestKeyComboBoxBasics:
         assert "　" in box.itemText(0)
 
     def test_no_blank_item(self, qt):
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         assert box.findData(" ") == -1
         assert all(box.itemText(i).strip() for i in range(box.count()))
 
     def test_set_and_read_canonical_key(self, qt):
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         for name in ("space", "w", "up", "f1", "numpad5"):
@@ -202,7 +202,7 @@ class TestKeyComboBoxBasics:
     def test_space_alias_survives(self, qt):
         """可用性回归：手输单个空格不能被 ``strip`` 吃掉。"""
 
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.set_key(" ")
@@ -211,7 +211,7 @@ class TestKeyComboBoxBasics:
         assert box.current_key() == " "
 
     def test_empty_key(self, qt):
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.set_key("")
@@ -219,7 +219,7 @@ class TestKeyComboBoxBasics:
         assert box.currentIndex() == -1
 
     def test_typed_chinese_label_maps_to_key_name(self, qt):
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.setEditText("空格")
@@ -228,8 +228,8 @@ class TestKeyComboBoxBasics:
         assert box.current_key() == "lshift"
 
     def test_typed_display_text_maps_to_key_name(self, qt):
-        from danmaku_kb.ui.key_selector import KeyComboBox
-        from danmaku_kb.input.keycodes import key_display
+        from screenkey.ui.key_selector import KeyComboBox
+        from screenkey.input.keycodes import key_display
 
         box = KeyComboBox()
         box.setEditText(key_display("enter"))
@@ -238,7 +238,7 @@ class TestKeyComboBoxBasics:
     def test_ambiguous_label_prefix_is_not_guessed(self, qt):
         """「左」能对上左 Alt / 左 Ctrl / 左 Shift / 左 Win，不许瞎猜。"""
 
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.setEditText("左")
@@ -248,7 +248,7 @@ class TestKeyComboBoxBasics:
     def test_unknown_typing_is_preserved(self, qt):
         """手填是允许的：控件不擅自纠正，合法性由保存时校验。"""
 
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.setEditText("随便写")
@@ -256,7 +256,7 @@ class TestKeyComboBoxBasics:
         assert box.resolvable() is False
 
     def test_resolvable_matches_save_time_validation(self, qt):
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.set_key("f7")
@@ -267,7 +267,7 @@ class TestKeyComboBoxBasics:
     def test_spaced_typing_is_collapsed_to_canonical_name(self, qt):
         """搜索不区分空白，所以照着搜索结果手打的内容也必须能存下来。"""
 
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         for typed, expected in (
@@ -288,7 +288,7 @@ class TestKeyComboBoxBasics:
         照样能存下来（`current_key()` 会按空白不敏感换算）。
         """
 
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.setEditText("page down")
@@ -304,8 +304,8 @@ class TestKeyComboBoxBasics:
 
         from PyQt5.QtTest import QTest
 
-        from danmaku_kb.input.keycodes import all_key_names
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.input.keycodes import all_key_names
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         box.show()
@@ -334,7 +334,7 @@ class TestKeyComboBoxBasics:
         from PyQt5.QtCore import Qt
         from PyQt5.QtWidgets import QCompleter
 
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         completer = box.completer()
@@ -346,8 +346,8 @@ class TestKeyComboBoxBasics:
         assert completer.model() is box.model()
 
     def test_matches_for_uses_shared_rules(self, qt):
-        from danmaku_kb.input.keycodes import search_key_names
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.input.keycodes import search_key_names
+        from screenkey.ui.key_selector import KeyComboBox
 
         box = KeyComboBox()
         for query in ("space", "空", "左Shift", ""):
@@ -368,7 +368,7 @@ class _WarningRecorder:
 
 @pytest.fixture
 def no_modals(monkeypatch):
-    import danmaku_kb.ui.mapping_editor as me
+    import screenkey.ui.mapping_editor as me
 
     recorder = _WarningRecorder()
     monkeypatch.setattr(me, "QMessageBox", recorder)
@@ -376,16 +376,16 @@ def no_modals(monkeypatch):
 
 
 def _key_editor():
-    from danmaku_kb.ui.mapping_editor import MappingEditor
+    from screenkey.ui.mapping_editor import MappingEditor
 
     return MappingEditor(is_mouse=False)
 
 
 class TestMappingEditorIntegration:
     def test_key_column_uses_the_selector(self, qt):
-        from danmaku_kb.input.mappings import KeyMapping
-        from danmaku_kb.ui import mapping_editor as me
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.input.mappings import KeyMapping
+        from screenkey.ui import mapping_editor as me
+        from screenkey.ui.key_selector import KeyComboBox
 
         editor = _key_editor()
         editor.load([KeyMapping(trigger="w", key="up")])
@@ -393,7 +393,7 @@ class TestMappingEditorIntegration:
         assert isinstance(widget, KeyComboBox)
 
     def test_loaded_key_roundtrips(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping
+        from screenkey.input.mappings import KeyMapping
 
         editor = _key_editor()
         editor.load(
@@ -407,8 +407,8 @@ class TestMappingEditorIntegration:
         assert no_modals.calls == []
 
     def test_picking_from_dropdown_writes_key_name(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping
-        from danmaku_kb.ui import mapping_editor as me
+        from screenkey.input.mappings import KeyMapping
+        from screenkey.ui import mapping_editor as me
 
         editor = _key_editor()
         editor.load([KeyMapping(trigger="w", key="up")])
@@ -418,8 +418,8 @@ class TestMappingEditorIntegration:
         assert no_modals.calls == []
 
     def test_typing_chinese_label_writes_key_name(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping
-        from danmaku_kb.ui import mapping_editor as me
+        from screenkey.input.mappings import KeyMapping
+        from screenkey.ui import mapping_editor as me
 
         editor = _key_editor()
         editor.load([KeyMapping(trigger="w", key="up")])
@@ -431,8 +431,8 @@ class TestMappingEditorIntegration:
     def test_space_key_mapping_still_savable(self, qt, no_modals):
         """历史坑：``strip`` 把单个空格吃掉后，空格键映射永远保存不了。"""
 
-        from danmaku_kb.input.mappings import KeyMapping
-        from danmaku_kb.ui import mapping_editor as me
+        from screenkey.input.mappings import KeyMapping
+        from screenkey.ui import mapping_editor as me
 
         editor = _key_editor()
         editor.load([KeyMapping(trigger="空格", key="space")])
@@ -442,8 +442,8 @@ class TestMappingEditorIntegration:
         assert no_modals.calls == []
 
     def test_unknown_typed_key_is_rejected_with_a_message(self, qt, no_modals):
-        from danmaku_kb.input.mappings import KeyMapping
-        from danmaku_kb.ui import mapping_editor as me
+        from screenkey.input.mappings import KeyMapping
+        from screenkey.ui import mapping_editor as me
 
         editor = _key_editor()
         editor.load([KeyMapping(trigger="w", key="up")])
@@ -452,9 +452,9 @@ class TestMappingEditorIntegration:
         assert [title for title, _ in no_modals.calls] == ["未知按键"]
 
     def test_mouse_editor_is_unaffected(self, qt, no_modals):
-        from danmaku_kb.input.mappings import MouseMapping
-        from danmaku_kb.ui.mapping_editor import MappingEditor
-        from danmaku_kb.ui.key_selector import KeyComboBox
+        from screenkey.input.mappings import MouseMapping
+        from screenkey.ui.mapping_editor import MappingEditor
+        from screenkey.ui.key_selector import KeyComboBox
 
         editor = MappingEditor(is_mouse=True)
         editor.load([MouseMapping(trigger="左键")])

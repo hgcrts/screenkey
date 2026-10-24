@@ -22,7 +22,7 @@ def qt():
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     pytest.importorskip("PyQt5", reason="需要 PyQt5 才能测界面")
 
-    from danmaku_kb.ui.qt_env import configure_qt_environment
+    from screenkey.ui.qt_env import configure_qt_environment
 
     configure_qt_environment()
 
@@ -34,9 +34,9 @@ def qt():
 @pytest.fixture
 def window(qt, tmp_path):
     """和用户现场一致：平台停在 B 站，抖音 Cookie 已保存。"""
-    from danmaku_kb.config.manager import ConfigManager
-    from danmaku_kb.config.models import Platform
-    from danmaku_kb.ui.main_window import MainWindow
+    from screenkey.config.manager import ConfigManager
+    from screenkey.config.models import Platform
+    from screenkey.ui.main_window import MainWindow
 
     manager = ConfigManager(config_dir=tmp_path / "cfg", auto_save=False)
     manager.load()
@@ -77,7 +77,7 @@ class TestCredentialSummary:
 
 class TestPlatformSwitch:
     def test_switching_to_douyin_shows_its_cookie(self, window):
-        from danmaku_kb.config.models import Platform
+        from screenkey.config.models import Platform
 
         window._select_platform(Platform.DOUYIN)
         assert window._current_platform() == Platform.DOUYIN
@@ -85,7 +85,7 @@ class TestPlatformSwitch:
         assert "含 ttwid" in window.cred_saved.text()
 
     def test_switching_back_restores_empty_bilibili_credential(self, window):
-        from danmaku_kb.config.models import Platform
+        from screenkey.config.models import Platform
 
         window._select_platform(Platform.DOUYIN)
         window._select_platform(Platform.BILIBILI)
@@ -104,8 +104,8 @@ class TestCredentialSummaryFunction:
         return SimpleNamespace(cookie=cookie, sessdata=sessdata)
 
     def test_only_douyin_cookie_on_bilibili_platform(self):
-        from danmaku_kb.config.models import Platform
-        from danmaku_kb.ui.main_window import credential_summary
+        from screenkey.config.models import Platform
+        from screenkey.ui.main_window import credential_summary
 
         text = credential_summary(self._conn(cookie="ttwid=abc"), Platform.BILIBILI)
         assert "抖音 Cookie 已保存（1 项，含 ttwid）" in text
@@ -113,8 +113,8 @@ class TestCredentialSummaryFunction:
         assert "切换平台即可看到" in text
 
     def test_both_saved_has_no_switch_hint(self):
-        from danmaku_kb.config.models import Platform
-        from danmaku_kb.ui.main_window import credential_summary
+        from screenkey.config.models import Platform
+        from screenkey.ui.main_window import credential_summary
 
         text = credential_summary(
             self._conn(cookie="ttwid=abc", sessdata="SESSDATA=x"), Platform.BILIBILI
@@ -124,16 +124,16 @@ class TestCredentialSummaryFunction:
         assert "切换平台" not in text
 
     def test_only_sessdata_on_douyin_platform(self):
-        from danmaku_kb.config.models import Platform
-        from danmaku_kb.ui.main_window import credential_summary
+        from screenkey.config.models import Platform
+        from screenkey.ui.main_window import credential_summary
 
         text = credential_summary(self._conn(sessdata="SESSDATA=x"), Platform.DOUYIN)
         assert "抖音 Cookie 未保存" in text
         assert "B 站的凭证已保存" in text
 
     def test_nothing_saved_has_no_hint(self):
-        from danmaku_kb.config.models import Platform
-        from danmaku_kb.ui.main_window import credential_summary
+        from screenkey.config.models import Platform
+        from screenkey.ui.main_window import credential_summary
 
         text = credential_summary(self._conn(), Platform.BILIBILI)
         assert "B 站 SESSDATA 未保存" in text

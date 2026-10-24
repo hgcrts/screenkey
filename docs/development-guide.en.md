@@ -1,4 +1,4 @@
-# Danmaku Keyboard V2
+# ScreenKey
 
 **English** | [简体中文](../README.md)
 
@@ -14,7 +14,7 @@ endpoint actually answers instead of returning `-352`.
 
 Don't want to install Python? Grab the packaged build (Windows 10/11 x64, no installation):
 
-**[⬇ Download DanmakuKeyboard-V2.1.0-win64.zip](https://github.com/hgcrts/danmaku-keyboard-v2/releases/latest)** (42.7 MiB — unzip and run `弹幕键盘V2.exe`; the SHA-256 lives in `SHA256SUMS.txt` on the release page.)
+**[⬇ Download ScreenKey-v2.1.0-win64.zip](https://github.com/hgcrts/screenkey/releases/latest)** (42.7 MiB — unzip and run `ScreenKey.exe`; the SHA-256 lives in `SHA256SUMS.txt` on the release page.)
 
 To run from source or hack on the code, see [Install (from source)](#install-from-source).
 
@@ -105,7 +105,7 @@ python -m venv .venv
 or directly:
 
 ```bat
-.venv\Scripts\python.exe src\danmaku_kb\main.py
+.venv\Scripts\python.exe src\screenkey\main.py
 ```
 
 `main.py` bootstraps `src` on `sys.path` itself — no `PYTHONPATH` needed, any working
@@ -113,13 +113,13 @@ directory works.
 
 ## Prebuilt binaries
 
-Grab the `danmaku-keyboard-v2.1.0-win64.zip` from the Releases page, extract it **whole**
-and run `弹幕键盘V2.exe` inside it. The build is PyInstaller *onedir*: the executable is
+Grab the `screenkey.1.0-win64.zip` from the Releases page, extract it **whole**
+and run `ScreenKey.exe` inside it. The build is PyInstaller *onedir*: the executable is
 only ~6 MB, the bulk is the Qt runtime — copying the `.exe` alone will not run.
 
 ```bat
-弹幕键盘V2.exe --selftest    :: verify the bundle
-弹幕键盘V2.exe --check-env   :: verify this machine can deliver input
+ScreenKey.exe --selftest    :: verify the bundle
+ScreenKey.exe --check-env   :: verify this machine can deliver input
 ```
 
 ---
@@ -127,7 +127,7 @@ only ~6 MB, the bulk is the Qt runtime — copying the `.exe` alone will not run
 ## CLI
 
 ```
-danmaku-kb [-h] [--version] [--debug] [--log-dir DIR] [--config-dir DIR]
+screenkey [-h] [--version] [--debug] [--log-dir DIR] [--config-dir DIR]
            [--selftest] [--check-env] [--simulate]
            [--platform {douyin,bilibili}] [--room ROOM] [--no-hotkey]
 ```
@@ -138,8 +138,8 @@ Exit codes: `0` ok, `1` bad arguments, `2` missing dependency, `3` self-test fai
 
 | Content | Default |
 | --- | --- |
-| Config | `%USERPROFILE%\.danmaku_kb\settings.json` (`--config-dir`, `DANMAKU_KB_CONFIG_DIR`) |
-| Logs | `%USERPROFILE%\.danmaku_kb\logs\` (`--log-dir`, `DANMAKU_KB_LOG_DIR`) |
+| Config | `%USERPROFILE%\.screenkey\settings.json` (`--config-dir`, `SCREENKEY_CONFIG_DIR`) |
+| Logs | `%USERPROFILE%\.screenkey\logs\` (`--log-dir`, `SCREENKEY_LOG_DIR`) |
 
 Credentials (Bilibili SESSDATA, Douyin cookie) are stored **DPAPI-encrypted** on Windows
 (`dpapi:` prefix) and fall back to plaintext where DPAPI is unavailable.
@@ -195,7 +195,7 @@ remaining 25 spawn child processes and fail inside restricted sandboxes.
 .venv\Scripts\python.exe -m PyInstaller --noconfirm --clean main.spec
 ```
 
-Layout: `src/danmaku_kb/{danmaku,ui,config,input,login,utils}`, `tests/` (32 files),
+Layout: `src/screenkey/{danmaku,ui,config,input,login,utils}`, `tests/` (32 files),
 `tools/build_helper.py` (works around PyQt5's non-ASCII-path bug by building through an
 ASCII junction), `docs/` (Chinese design notes, acceptance flow, post-mortems).
 
@@ -205,7 +205,7 @@ ASCII junction), `docs/` (Chinese design notes, acceptance flow, post-mortems).
 
 Source code: see [LICENSE](LICENSE).
 
-- `src/danmaku_kb/data/sign.js` is **third-party obfuscated Douyin SDK code**; its copyright
+- `src/screenkey/data/sign.js` is **third-party obfuscated Douyin SDK code**; its copyright
   belongs to Douyin/ByteDance. It is bundled for research purposes only — **no commercial
   use, no redistribution**.
 - Automating input in online games may violate their terms and lead to bans. **Use at your

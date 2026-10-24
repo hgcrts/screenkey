@@ -29,9 +29,9 @@ from pathlib import Path
 
 import pytest
 
-from danmaku_kb.danmaku.simulator import SimulatorFetcher
+from screenkey.danmaku.simulator import SimulatorFetcher
 
-PKG = Path(__file__).resolve().parent.parent / "src" / "danmaku_kb"
+PKG = Path(__file__).resolve().parent.parent / "src" / "screenkey"
 FETCHER_DIR = PKG / "danmaku"
 
 

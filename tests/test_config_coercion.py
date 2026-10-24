@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from danmaku_kb.config.models import (
+from screenkey.config.models import (
     AppConfig,
     ConnectionConfig,
     DisplayConfig,

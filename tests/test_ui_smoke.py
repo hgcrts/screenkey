@@ -34,7 +34,7 @@ def qt():
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
-    from danmaku_kb.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
+    from screenkey.ui.qt_env import PYQT5_AVAILABLE, configure_qt_environment
 
     assert PYQT5_AVAILABLE, "PyQt5 已装但探测为不可用，qt_env 的探测逻辑有问题"
     configure_qt_environment()
@@ -48,7 +48,7 @@ def qt():
 @pytest.fixture
 def isolated_manager(qt, tmp_path):
     """指向临时目录的 ConfigManager，避免污染用户真实配置。"""
-    from danmaku_kb.config.manager import ConfigManager
+    from screenkey.config.manager import ConfigManager
 
     manager = ConfigManager(config_dir=tmp_path / "cfg", auto_save=False)
     manager.load()
@@ -60,10 +60,10 @@ class TestMainWindowConstruction:
         """按 ``main.py`` 的真实调用方式构造主窗口。
 
         这条曾经真的失败过：把 ``ConfigManager`` 当成 `config` 传进去，
-        ``DanmakuKeyboardEngine.__init__`` 会在 ``self.config.input.game_mode``
+        ``ScreenKeyEngine.__init__`` 会在 ``self.config.input.game_mode``
         上抛 ``AttributeError``。所以这里连参数**顺序**也一并锁住。
         """
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         try:
@@ -81,12 +81,12 @@ class TestMainWindowConstruction:
     def test_main_window_works_with_no_arguments(self, qt, tmp_path, monkeypatch):
         """不传参时也要能建起来（会自己 new 一个 ConfigManager）。
 
-        用 ``DANMAKU_KB_CONFIG_DIR`` 把配置目录引到 tmp，避免写用户目录
-        （受限环境里写 ``~/.danmaku_kb`` 会 ``[WinError 5] 拒绝访问``）。
+        用 ``SCREENKEY_CONFIG_DIR`` 把配置目录引到 tmp，避免写用户目录
+        （受限环境里写 ``~/.screenkey`` 会 ``[WinError 5] 拒绝访问``）。
         """
-        monkeypatch.setenv("DANMAKU_KB_CONFIG_DIR", str(tmp_path / "auto"))
+        monkeypatch.setenv("SCREENKEY_CONFIG_DIR", str(tmp_path / "auto"))
 
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow()
         try:
@@ -97,7 +97,7 @@ class TestMainWindowConstruction:
 
     def test_engine_is_dry_run_safe_by_default(self, qt, isolated_manager):
         """界面构造时绝不能让引擎立刻真的发按键。"""
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         try:
@@ -128,12 +128,12 @@ class TestMappingTableRendering:
         return out
 
     def test_move_and_scroll_are_rendered(self, qt, isolated_manager):
-        from danmaku_kb.input.mappings import (
+        from screenkey.input.mappings import (
             MouseAction,
             MouseButton,
             MouseMapping,
         )
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         # 键盘映射清空，让断言只面对鼠标行（否则键盘行排在前面）
         isolated_manager.key_mappings = []
@@ -161,12 +161,12 @@ class TestMappingTableRendering:
             window.close()
 
     def test_plain_click_shows_button_name(self, qt, isolated_manager):
-        from danmaku_kb.input.mappings import (
+        from screenkey.input.mappings import (
             MouseAction,
             MouseButton,
             MouseMapping,
         )
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         isolated_manager.key_mappings = []
         isolated_manager.mouse_mappings = [
@@ -183,8 +183,8 @@ class TestMappingTableRendering:
 
     def test_long_press_shows_hold_duration(self, qt, isolated_manager):
         """「动作」列对长按要带出按住时长，否则用户看不出自己设的值存没存下来。"""
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.input.mappings import KeyAction, KeyMapping
+        from screenkey.ui.main_window import MainWindow
 
         isolated_manager.key_mappings = [
             KeyMapping(trigger="q", key="q", action=KeyAction.LONG_PRESS,
@@ -202,8 +202,8 @@ class TestMappingTableRendering:
 
     def test_other_actions_do_not_show_hold_duration(self, qt, isolated_manager):
         """非长按动作不显示时长：那一列不该被无关数字占满。"""
-        from danmaku_kb.input.mappings import KeyAction, KeyMapping
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.input.mappings import KeyAction, KeyMapping
+        from screenkey.ui.main_window import MainWindow
 
         isolated_manager.key_mappings = [
             KeyMapping(trigger="w", key="up", action=KeyAction.PRESS_AND_RELEASE,
@@ -228,7 +228,7 @@ class TestMappingTableRendering:
         ``ui/mapping_editor.py`` 的 ``action_label()``，与编辑器下拉同一份文案。
         """
 
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         try:
@@ -241,8 +241,8 @@ class TestMappingTableRendering:
             window.close()
 
     def test_action_column_matches_editor_labels(self, qt, isolated_manager):
-        import danmaku_kb.input.mappings as mappings_mod
-        from danmaku_kb.ui.main_window import MainWindow
+        import screenkey.input.mappings as mappings_mod
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         try:
@@ -276,7 +276,7 @@ class TestLoginDialogConstruction:
     """
 
     def test_bilibili_tab_dialog_constructs(self, qt):
-        from danmaku_kb.ui.login_dialog import LoginDialog
+        from screenkey.ui.login_dialog import LoginDialog
 
         dialog = LoginDialog(platform="bilibili")
         try:
@@ -286,7 +286,7 @@ class TestLoginDialogConstruction:
             dialog.close()
 
     def test_douyin_tab_dialog_constructs(self, qt):
-        from danmaku_kb.ui.login_dialog import LoginDialog
+        from screenkey.ui.login_dialog import LoginDialog
 
         dialog = LoginDialog(platform="douyin")
         try:
@@ -301,8 +301,8 @@ class TestLoginDialogConstruction:
         其实被上一条覆盖了；这里额外锁住"信号发出后状态栏真的会更新"，
         防止有人把 connect 删掉而测试还是绿的。
         """
-        from danmaku_kb.login.bilibili_qr import LoginResult, QRState
-        from danmaku_kb.ui.login_dialog import LoginDialog
+        from screenkey.login.bilibili_qr import LoginResult, QRState
+        from screenkey.ui.login_dialog import LoginDialog
 
         dialog = LoginDialog(platform="bilibili")
         try:
@@ -320,7 +320,7 @@ class TestLoginDialogConstruction:
         ``checked=False`` 而"看起来能用"，但那是巧合：按钮一旦变成 checkable，
         ``keep_text`` 就会变成 True，状态栏文案再也不刷新。这里改成显式 lambda。
         """
-        from danmaku_kb.ui.login_dialog import LoginDialog
+        from screenkey.ui.login_dialog import LoginDialog
 
         dialog = LoginDialog(platform="bilibili")
         try:
@@ -344,7 +344,7 @@ class TestEventLoopRuns:
         """
         from PyQt5.QtCore import QTimer
 
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         window.show()
@@ -366,7 +366,7 @@ class TestEventLoopRuns:
 
     def test_stats_timer_stops_on_close(self, qt, isolated_manager):
         """关窗后统计定时器必须停掉，否则对象销毁后回调会悬空。"""
-        from danmaku_kb.ui.main_window import MainWindow
+        from screenkey.ui.main_window import MainWindow
 
         window = MainWindow(config=isolated_manager.config, config_manager=isolated_manager)
         window.close()

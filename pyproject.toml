@@ -1,4 +1,4 @@
-# 弹幕键盘 V2 —— 工具配置（非打包用）
+# 幕键 —— 工具配置（非打包用）
 #
 # 项目不打成 pip 包：它是个带 PyQt5 界面的桌面程序，用
 # `tools/build_helper.py` + PyInstaller 出 exe（见 README「打包」）。

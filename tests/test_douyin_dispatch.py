@@ -8,9 +8,9 @@
 
 from __future__ import annotations
 
-from danmaku_kb.danmaku.douyin import DouyinFetcher
-from danmaku_kb.danmaku.douyin_protocol import MSG_METHOD, MSG_PAYLOAD
-from danmaku_kb.danmaku.protobuf_lite import (
+from screenkey.danmaku.douyin import DouyinFetcher
+from screenkey.danmaku.douyin_protocol import MSG_METHOD, MSG_PAYLOAD
+from screenkey.danmaku.protobuf_lite import (
     encode_field_bytes,
     encode_field_string,
 )

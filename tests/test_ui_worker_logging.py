@@ -19,8 +19,8 @@ from pathlib import Path
 
 import pytest
 
-from danmaku_kb.engine import DanmakuKeyboardEngine, EngineEvent, EngineStats
-from danmaku_kb.danmaku.message import DanmakuMessage, MessageType
+from screenkey.engine import ScreenKeyEngine, EngineEvent, EngineStats
+from screenkey.danmaku.message import DanmakuMessage, MessageType
 
 
 # ----------------------------------------------------------------------
@@ -36,14 +36,14 @@ def qt_bridge():
 
     from PyQt5.QtWidgets import QApplication
 
-    from danmaku_kb.ui.qt_env import configure_qt_environment
+    from screenkey.ui.qt_env import configure_qt_environment
 
     configure_qt_environment()
     app = QApplication.instance() or QApplication([])
 
-    from danmaku_kb.ui.worker import EngineBridge
+    from screenkey.ui.worker import EngineBridge
 
-    engine = DanmakuKeyboardEngine()
+    engine = ScreenKeyEngine()
     engine.dry_run = True
     bridge = EngineBridge(engine)
     return app, engine, bridge
@@ -173,7 +173,7 @@ class TestEngineBridgeSignals:
         import ast
         from pathlib import Path
 
-        source = (Path(__file__).resolve().parents[1] / "src" / "danmaku_kb"
+        source = (Path(__file__).resolve().parents[1] / "src" / "screenkey"
                   / "ui" / "worker.py")
         tree = ast.parse(source.read_text(encoding="utf-8"))
         bridge = next(n for n in ast.walk(tree)
@@ -212,7 +212,7 @@ class TestQtAbortsOnSlotException:
             import os, sys
             os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
             sys.path.insert(0, r"{src}")
-            from danmaku_kb.ui.qt_env import configure_qt_environment
+            from screenkey.ui.qt_env import configure_qt_environment
             configure_qt_environment()
             from PyQt5.QtCore import QObject, pyqtSignal
             from PyQt5.QtWidgets import QApplication
@@ -292,12 +292,12 @@ def _close_log_handlers():
 
     顺带把 `_configured` 复位，避免测试之间互相影响。
     """
-    from danmaku_kb.utils import logging_setup
+    from screenkey.utils import logging_setup
 
     yield
 
     for logger in (logging.getLogger(),
-                   logging.getLogger("danmaku_kb.danmaku.raw")):
+                   logging.getLogger("screenkey.danmaku.raw")):
         for handler in list(logger.handlers):
             try:
                 logger.removeHandler(handler)
@@ -310,10 +310,10 @@ def _close_log_handlers():
 @pytest.fixture
 def isolated_logs(tmp_path, monkeypatch):
     """把日志目录引到临时目录，并强制重新配置。"""
-    from danmaku_kb.utils import logging_setup
+    from screenkey.utils import logging_setup
 
     log_dir = tmp_path / "logs"
-    monkeypatch.setenv("DANMAKU_KB_LOG_DIR", str(log_dir))
+    monkeypatch.setenv("SCREENKEY_LOG_DIR", str(log_dir))
     monkeypatch.setattr(logging_setup, "_log_dir", None)
     monkeypatch.setattr(logging_setup, "_configured", False)
     return logging_setup, log_dir
@@ -327,9 +327,9 @@ class TestLogDir:
 
     def test_falls_back_to_temp_when_unwritable(self, tmp_path, monkeypatch):
         """用户目录不可写时必须退回临时目录，绝不能让程序起不来。"""
-        from danmaku_kb.utils import logging_setup
+        from screenkey.utils import logging_setup
 
-        monkeypatch.setenv("DANMAKU_KB_LOG_DIR", str(tmp_path / "x"))
+        monkeypatch.setenv("SCREENKEY_LOG_DIR", str(tmp_path / "x"))
         monkeypatch.setattr(logging_setup, "_log_dir", None)
 
         real_mkdir = Path.mkdir
@@ -341,7 +341,7 @@ class TestLogDir:
 
         monkeypatch.setattr(Path, "mkdir", fake_mkdir)
         got = logging_setup.get_log_dir()
-        assert got.name == "danmaku_kb_logs", f"应退回临时目录，实际 {got}"
+        assert got.name == "screenkey_logs", f"应退回临时目录，实际 {got}"
 
     def test_log_dir_is_cached(self, isolated_logs):
         setup, log_dir = isolated_logs
@@ -356,9 +356,9 @@ class TestLogDir:
         ``RuntimeError: Could not determine home directory.`` 直接冒到顶层，
         ``main.py --selftest`` 变成空输出 + 退出码 1。
         """
-        from danmaku_kb.utils import logging_setup
+        from screenkey.utils import logging_setup
 
-        monkeypatch.delenv("DANMAKU_KB_LOG_DIR", raising=False)
+        monkeypatch.delenv("SCREENKEY_LOG_DIR", raising=False)
         monkeypatch.setattr(logging_setup, "_log_dir", None)
 
         def boom():
@@ -366,7 +366,7 @@ class TestLogDir:
 
         monkeypatch.setattr(logging_setup.Path, "home", staticmethod(boom), raising=False)
         got = logging_setup.get_log_dir()
-        assert got.name == "danmaku_kb_logs", f"应退回临时目录，实际 {got}"
+        assert got.name == "screenkey_logs", f"应退回临时目录，实际 {got}"
 
     def test_probe_writable_detects_write_denied(self, tmp_path, monkeypatch):
         """**只 mkdir 成功不代表可写** —— 本模块踩过一次，代价是程序起不来。
@@ -376,7 +376,7 @@ class TestLogDir:
         ``RotatingFileHandler`` 随后在 ``open()`` 抛 ``PermissionError``，
         程序在打印任何东西之前就退出（退出码 1、无输出、无日志）。
         """
-        from danmaku_kb.utils import logging_setup
+        from screenkey.utils import logging_setup
 
         target = tmp_path / "logs"
 
@@ -388,9 +388,9 @@ class TestLogDir:
 
     def test_skips_candidate_that_is_not_writable(self, tmp_path, monkeypatch):
         """首选目录写不进去时必须继续找下一个，而不是硬着头皮用它。"""
-        from danmaku_kb.utils import logging_setup
+        from screenkey.utils import logging_setup
 
-        monkeypatch.delenv("DANMAKU_KB_LOG_DIR", raising=False)
+        monkeypatch.delenv("SCREENKEY_LOG_DIR", raising=False)
         monkeypatch.setattr(logging_setup, "_log_dir", None)
         first = tmp_path / "first"
         second = tmp_path / "second"
@@ -408,19 +408,19 @@ class TestLogDir:
 
     def test_falls_back_when_every_candidate_is_unwritable(self, tmp_path, monkeypatch):
         """所有候选都不可写时退到临时目录，并且**不能抛**。"""
-        from danmaku_kb.utils import logging_setup
+        from screenkey.utils import logging_setup
 
-        monkeypatch.delenv("DANMAKU_KB_LOG_DIR", raising=False)
+        monkeypatch.delenv("SCREENKEY_LOG_DIR", raising=False)
         monkeypatch.setattr(logging_setup, "_log_dir", None)
         monkeypatch.setattr(logging_setup, "_probe_writable", lambda path: False)
         got = logging_setup.get_log_dir()
-        assert got.name == "danmaku_kb_logs"
+        assert got.name == "screenkey_logs"
 
     def test_explicit_override_falls_back_without_probing_others(self, tmp_path, monkeypatch):
-        """显式指定 ``DANMAKU_KB_LOG_DIR`` 时只试它自己，失败就退临时目录。"""
-        from danmaku_kb.utils import logging_setup
+        """显式指定 ``SCREENKEY_LOG_DIR`` 时只试它自己，失败就退临时目录。"""
+        from screenkey.utils import logging_setup
 
-        monkeypatch.setenv("DANMAKU_KB_LOG_DIR", str(tmp_path / "chosen"))
+        monkeypatch.setenv("SCREENKEY_LOG_DIR", str(tmp_path / "chosen"))
         monkeypatch.setattr(logging_setup, "_log_dir", None)
         probed: list = []
 
@@ -430,7 +430,7 @@ class TestLogDir:
 
         monkeypatch.setattr(logging_setup, "_probe_writable", fake_probe)
         got = logging_setup.get_log_dir()
-        assert got.name == "danmaku_kb_logs"
+        assert got.name == "screenkey_logs"
         assert len(probed) == 1, "显式指定的目录不该再去试别的候选"
 
 
@@ -466,7 +466,7 @@ class TestSetupLoggingFailures:
         path = setup.setup_logging(force=True)  # 不该抛
         assert path == log_dir / "app.log"
         assert (log_dir / "app.log").exists()
-        raw = logging.getLogger("danmaku_kb.danmaku.raw")
+        raw = logging.getLogger("screenkey.danmaku.raw")
         assert raw.handlers == [], "造不出来就不该挂一个坏 handler"
 
 
@@ -475,17 +475,17 @@ class TestDefaultConfigDir:
 
     和日志目录是**同一个坑的另一处**：``Path.home()`` 缺 ``HOME`` /
     ``USERPROFILE`` 时抛 ``RuntimeError`` 而非 ``OSError``。这里不退回临时
-    目录而是退回 CWD 下的 ``.danmaku_kb`` —— 配置得让用户找得到。
+    目录而是退回 CWD 下的 ``.screenkey`` —— 配置得让用户找得到。
     """
 
     def test_uses_env_override(self, monkeypatch, tmp_path):
-        from danmaku_kb.config.manager import ENV_CONFIG_DIR, default_config_dir
+        from screenkey.config.manager import ENV_CONFIG_DIR, default_config_dir
 
         monkeypatch.setenv(ENV_CONFIG_DIR, str(tmp_path / "envcfg"))
         assert default_config_dir() == tmp_path / "envcfg"
 
     def test_falls_back_to_cwd_when_home_is_unknown(self, monkeypatch):
-        from danmaku_kb.config import manager as manager_mod
+        from screenkey.config import manager as manager_mod
 
         monkeypatch.delenv(manager_mod.ENV_CONFIG_DIR, raising=False)
 
@@ -497,7 +497,7 @@ class TestDefaultConfigDir:
         assert got == manager_mod.Path.cwd() / manager_mod.DEFAULT_DIR_NAME, got
 
     def test_normal_path_is_home_dir(self, monkeypatch, tmp_path):
-        from danmaku_kb.config import manager as manager_mod
+        from screenkey.config import manager as manager_mod
 
         monkeypatch.delenv(manager_mod.ENV_CONFIG_DIR, raising=False)
         monkeypatch.setattr(
@@ -548,7 +548,7 @@ class TestSetupLogging:
         setup, log_dir = isolated_logs
         setup.setup_logging(force=True)
         raw = setup.get_raw_danmaku_logger()
-        assert raw.name == "danmaku_kb.danmaku.raw"
+        assert raw.name == "screenkey.danmaku.raw"
         assert raw.propagate is False, "原文 logger 不应向 root 冒泡（会写两遍）"
         assert raw.handlers, "原文 logger 没有自己的 handler"
 
@@ -575,29 +575,29 @@ class TestSetupLogging:
 
 class TestGetLogger:
     def test_adds_package_prefix(self):
-        from danmaku_kb.utils.logging_setup import get_logger
+        from screenkey.utils.logging_setup import get_logger
 
-        assert get_logger("danmaku.douyin").name == "danmaku_kb.danmaku.douyin"
+        assert get_logger("danmaku.douyin").name == "screenkey.danmaku.douyin"
 
     def test_does_not_double_prefix(self):
-        from danmaku_kb.utils.logging_setup import get_logger
+        from screenkey.utils.logging_setup import get_logger
 
-        assert get_logger("danmaku_kb.engine").name == "danmaku_kb.engine"
+        assert get_logger("screenkey.engine").name == "screenkey.engine"
 
     def test_dunder_name_works(self):
         """模块里普遍写 ``get_logger(__name__)``，``__name__`` 已是全名。"""
-        from danmaku_kb.utils.logging_setup import get_logger
+        from screenkey.utils.logging_setup import get_logger
 
-        assert get_logger("danmaku_kb.input.keyboard").name == "danmaku_kb.input.keyboard"
+        assert get_logger("screenkey.input.keyboard").name == "screenkey.input.keyboard"
 
     def test_same_name_returns_same_logger(self):
-        from danmaku_kb.utils.logging_setup import get_logger
+        from screenkey.utils.logging_setup import get_logger
 
         assert get_logger("a.b") is get_logger("a.b")
 
     def test_logger_is_usable_without_setup(self):
         """没调 ``setup_logging`` 也能取 logger 并记日志（不能抛）。"""
-        from danmaku_kb.utils.logging_setup import get_logger
+        from screenkey.utils.logging_setup import get_logger
 
         get_logger("never.configured").debug("没事")
 
@@ -612,7 +612,7 @@ class TestLoggingContract:
         """
         import ast
 
-        source = Path(__file__).resolve().parents[1] / "src" / "danmaku_kb" / "utils" / "logging_setup.py"
+        source = Path(__file__).resolve().parents[1] / "src" / "screenkey" / "utils" / "logging_setup.py"
         tree = ast.parse(source.read_text(encoding="utf-8"))
         # 剥掉所有 docstring（模块级 + 函数级 + 类级）
         for node in ast.walk(tree):
@@ -632,13 +632,13 @@ class TestLoggingContract:
         继续往**旧目录**写；root 的日志却已经写到新目录。结果 ``danmaku.log``
         与 ``app.log`` 分居两地，排查问题时看不到弹幕原文。
         """
-        from danmaku_kb.utils import logging_setup
+        from screenkey.utils import logging_setup
 
         dir_a = tmp_path / "A"
         dir_b = tmp_path / "B"
 
         def configure(path):
-            monkeypatch.setenv("DANMAKU_KB_LOG_DIR", str(path))
+            monkeypatch.setenv("SCREENKEY_LOG_DIR", str(path))
             monkeypatch.setattr(logging_setup, "_log_dir", None)
             monkeypatch.setattr(logging_setup, "_configured", False)
             logging_setup.setup_logging(force=True)
@@ -672,7 +672,7 @@ class TestLoggingContract:
         """
         import ast
 
-        src = Path(__file__).resolve().parents[1] / "src" / "danmaku_kb"
+        src = Path(__file__).resolve().parents[1] / "src" / "screenkey"
         users = []
         for path in sorted(src.rglob("*.py")):
             if "__pycache__" in path.parts:
@@ -706,7 +706,7 @@ class TestLoggingContract:
         这条是**故意**钉住的：它们能在测试里被无副作用地反复调用，
         正是因为没有 I/O。将来有人往里加日志，说明职责变了，应当被注意到。
         """
-        src = Path(__file__).resolve().parents[1] / "src" / "danmaku_kb"
+        src = Path(__file__).resolve().parents[1] / "src" / "screenkey"
         for rel in ("filters/rules.py", "utils/helpers.py"):
             text = (src / rel).read_text(encoding="utf-8")
             assert "import logging" not in text, f"{rel} 变成了带 I/O 的模块"

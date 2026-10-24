@@ -1,4 +1,4 @@
-# 弹幕键盘 V2.1.0 / Danmaku Keyboard V2.1.0
+# 弹幕键盘V2 v2.1.0 / DanmakuKeyboard-V2 v2.1.0（旧名，历史存档）
 
 > 直播间弹幕 → 真实键鼠操作。抖音 + B站双平台，Windows 10 / 11 x64。
 > Live-room comments → real keyboard & mouse actions. Douyin + Bilibili, Windows 10/11 x64.
@@ -9,7 +9,7 @@
 
 ### 下载
 
-- `DanmakuKeyboard-V2.1.0-win64.zip`（42.7 MiB）：解压后双击 `弹幕键盘V2/弹幕键盘V2.exe`，**免安装、免 Python**。
+- `ScreenKey-v2.1.0-win64.zip`（42.7 MiB）：解压后双击 `幕键/ScreenKey.exe`，**免安装、免 Python**。
 - 校验：`SHA256SUMS.txt` 里是对应 zip 的 SHA-256。
 
 ### 这个版本做了什么
@@ -26,7 +26,7 @@
 
 ### 首次使用
 
-1. 双击 `弹幕键盘V2.exe`；
+1. 双击 `ScreenKey.exe`；
 2. 选平台、填房间号；
 3. 抖音：本地需要 Node.js（`npm install` 后签名服务在 `tools/`）；B站：扫码登录后会自动保存加密 cookie；
 4. 在「按键映射」里把弹幕关键词绑到按键，点「开始」。
@@ -35,7 +35,7 @@
 
 - 仅支持 Windows 10/11（需要真实的 SendInput 注入；Linux/macOS 不适用）。
 - 需要管理员权限才能往游戏里注入按键。
-- `src/danmaku_kb/data/sign.js` 是第三方抖音 SDK 代码，仅限研究学习，禁止商用（详见 LICENSE 里的第三方声明）。
+- `src/screenkey/data/sign.js` 是第三方抖音 SDK 代码，仅限研究学习，禁止商用（详见 LICENSE 里的第三方声明）。
 - 本项目与抖音、B站官方无关，使用风险自负。
 
 ---
@@ -44,7 +44,7 @@
 
 ### Download
 
-- `DanmakuKeyboard-V2.1.0-win64.zip` (42.7 MiB): unzip and run `弹幕键盘V2/弹幕键盘V2.exe`. No installer, no Python needed.
+- `ScreenKey-v2.1.0-win64.zip` (42.7 MiB): unzip and run `幕键/ScreenKey.exe`. No installer, no Python needed.
 - Verify with the SHA-256 in `SHA256SUMS.txt`.
 
 ### What's in this release
@@ -61,7 +61,7 @@
 
 ### Quick start
 
-1. Run `弹幕键盘V2.exe`.
+1. Run `ScreenKey.exe`.
 2. Pick a platform and enter a room ID.
 3. Douyin needs Node.js locally (`npm install`, signing service under `tools/`); Bilibili needs a QR-code login, which stores an encrypted cookie automatically.
 4. In "Key mapping", bind comment keywords to keys, then press Start.
@@ -70,5 +70,5 @@
 
 - Windows 10/11 only — real key/mouse injection uses `SendInput`; Linux/macOS are unsupported.
 - Administrator privileges are required to inject input into games.
-- `src/danmaku_kb/data/sign.js` is third-party Douyin SDK code, bundled for study only, not for commercial use (see the third-party notice in LICENSE).
+- `src/screenkey/data/sign.js` is third-party Douyin SDK code, bundled for study only, not for commercial use (see the third-party notice in LICENSE).
 - Not affiliated with Douyin or Bilibili. Use at your own risk.

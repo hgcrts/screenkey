@@ -40,9 +40,9 @@ _probe*/
 tmp*/
 
 # ---------------- 本地配置 / 运行期数据 ----------------
-# 配置与日志默认写在 ~/.danmaku_kb/，不在仓库里；下面是便携模式跑出来的副本
-# （默认可写目录探测失败时会回落到「程序旁边的 .danmaku_kb」，见 config/manager.py）
-.danmaku_kb/
+# 配置与日志默认写在 ~/.screenkey/，不在仓库里；下面是便携模式跑出来的副本
+# （默认可写目录探测失败时会回落到「程序旁边的 .screenkey」，见 config/manager.py）
+.screenkey/
 settings.json
 settings.json.bad
 *.log
