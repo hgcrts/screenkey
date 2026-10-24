@@ -1,0 +1,11 @@
+# 弹幕键盘 V2 —— 工具配置（非打包用）
+#
+# 项目不打成 pip 包：它是个带 PyQt5 界面的桌面程序，用
+# `tools/build_helper.py` + PyInstaller 出 exe（见 README「打包」）。
+# 这里只放工具链配置，让 pytest / 各编辑器开箱即用。
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# 不进 tests/ 的临时验证脚本放 .test_tmp/（已被 .gitignore 忽略）
+norecursedirs = [".venv", "dist", "build", ".test_tmp", "*.egg"]
+addopts = "-q"

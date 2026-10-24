@@ -21,15 +21,18 @@ blivedm 封装了 B 站的弹幕长连接协议（含握手、心跳、认证）
 from __future__ import annotations
 
 import asyncio
+import base64
 import importlib
 import json
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from ..utils.helpers import extract_bilibili_room_id
 from ..utils.logging_setup import get_logger
 from .base import DanmakuFetcher
 from .bilibili_wbi import fetch_danmu_info as _fetch_signed_danmu_info
 from .message import DanmakuMessage, MessageType
+from .protobuf_lite import ProtobufError, get_int, get_str, parse_message
 
 logger = get_logger("danmaku.bilibili")
 
@@ -201,6 +204,49 @@ class _WsReadyHandler:
         self.fetcher._ws_ready = True
 
 
+def _parse_interact_word_v2(pb_b64: Any) -> Optional[Dict[str, Any]]:
+    """解析 ``INTERACT_WORD_V2`` 的 protobuf 载荷（进场 / 关注 / 分享）。
+
+    字段号来自 2026-10-24 对真实 WS 帧的实测取证（房间 21414905）：:
+
+        1  uid        varint（游客/隐身时服务端直接省略）
+        2  uname      string
+        4  identities packed repeated varint（粉丝勋章身份位）
+        5  msg_type   varint（1=进入 2=关注 3=分享）
+        6  room_id    varint
+        7  timestamp  秒
+        8  timestamp  毫秒
+        15 msg_id     uint64
+
+    为什么要自己解：blivedm 0.1.1 的 ``handlers.py`` 根本不认
+    ``INTERACT_WORD_V2``（V1 才在 ``IGNORED_CMDS`` 里），服务端把 V1 换成 V2
+    之后进场/关注就整批丢了 —— 日志里只剩一行 ``unknown cmd=INTERACT_WORD_V2``。
+
+    :returns: 解析结果 dict；载荷不是合法 protobuf 时返回 ``None``（不抛异常，
+        平台改协议时只会少一类消息，不会断掉整条链路）。
+    """
+    if not pb_b64:
+        return None
+    try:
+        raw = base64.b64decode(str(pb_b64), validate=False)
+    except (ValueError, TypeError):
+        return None
+    if not raw:
+        return None
+    try:
+        fields = parse_message(raw)
+    except ProtobufError:
+        return None
+    return {
+        "uid": get_int(fields, 1),
+        "uname": get_str(fields, 2),
+        "msg_type": get_int(fields, 5),
+        "room_id": get_int(fields, 6),
+        # 毫秒字段（8）精度更高，秒字段（7）兜底
+        "timestamp": (get_int(fields, 8) // 1000) or get_int(fields, 7),
+    }
+
+
 class _BiliHandler:  # pragma: no cover - 需要真实连接
     """blivedm 回调处理器。
 
@@ -209,6 +255,9 @@ class _BiliHandler:  # pragma: no cover - 需要真实连接
 
     def __init__(self, fetcher: "BilibiliFetcher") -> None:
         self.fetcher = fetcher
+        # 在线人数/WATCHED_CHANGE 大约 5 秒推一次，值不变时重复发会把弹幕列表刷屏
+        self._last_stats_content = ""
+        self._last_stats_at = 0.0
 
     # --- 弹幕 ---
     async def _on_danmaku(self, client: Any, message: Any) -> None:
@@ -348,6 +397,99 @@ class _BiliHandler:  # pragma: no cover - 需要真实连接
         except Exception as exc:
             logger.error("处理点赞消息失败: %s", exc)
 
+    # --- 进场（V2 协议）/ 在线人数 ---
+    #
+    # 2026-10 实测：服务端已把进场事件从 ``INTERACT_WORD`` 换成
+    # ``INTERACT_WORD_V2``（protobuf 载荷放在 ``data.pb``，base64）。
+    # blivedm 0.1.1 不认识它，所以必须在 :meth:`handle` 里自己接。
+    async def _on_interact_word_v2(self, client: Any, data: Any) -> None:
+        try:
+            payload = data if isinstance(data, dict) else {}
+            parsed = _parse_interact_word_v2(payload.get("pb"))
+            if not parsed:
+                return
+            texts = {1: "进入了直播间", 2: "关注了主播", 3: "分享了直播间"}
+            kinds = {1: MessageType.ENTER, 2: MessageType.FOLLOW, 3: MessageType.SYSTEM}
+            msg_type = int(parsed.get("msg_type") or 0)
+            text = texts.get(msg_type)
+            if not text:
+                return
+            ts = parsed.get("timestamp") or 0
+            self.fetcher._emit_message(
+                DanmakuMessage(
+                    content=text,
+                    nickname=str(parsed.get("uname") or "未知用户"),
+                    user_id=str(parsed.get("uid") or ""),
+                    platform="bilibili",
+                    room_id=self.fetcher.room_id,
+                    msg_type=kinds[msg_type],
+                    timestamp=ts or datetime.now(),
+                    extra={"protocol": "INTERACT_WORD_V2"},
+                )
+            )
+        except Exception as exc:
+            logger.error("处理进场消息(V2)失败: %s", exc)
+
+    def _stats_duplicate(self, content: str, window: float = 15.0) -> bool:
+        """同一统计文案在 ``window`` 秒内只发一次（``WATCHED_CHANGE`` 约 5s 一推）。"""
+        import time
+
+        now = time.monotonic()
+        if content == self._last_stats_content and now - self._last_stats_at < window:
+            return True
+        self._last_stats_content = content
+        self._last_stats_at = now
+        return False
+
+    async def _on_watched_change(self, client: Any, data: Any) -> None:
+        """``WATCHED_CHANGE``：累计观看人次（``num`` + 已格式化文案）。"""
+        try:
+            payload = data if isinstance(data, dict) else {}
+            num = int(payload.get("num") or 0)
+            text = str(payload.get("text_small") or "")
+            if not num and not text:
+                return
+            content = f"看过 {text or num}"
+            # 累计观看只在跨量级时才有信息量，窗口给大一点
+            if self._stats_duplicate(content, window=60.0):
+                return
+            self.fetcher._emit_message(
+                DanmakuMessage(
+                    content=content,
+                    platform="bilibili",
+                    room_id=self.fetcher.room_id,
+                    msg_type=MessageType.STATS,
+                    extra={"viewers": num, "viewers_text": text},
+                )
+            )
+        except Exception as exc:
+            logger.error("处理观看人数失败: %s", exc)
+
+    async def _on_online_rank_count(self, client: Any, data: Any) -> None:
+        """``ONLINE_RANK_COUNT``：当前在线人数（``online_count`` 字段）。"""
+        try:
+            payload = data if isinstance(data, dict) else {}
+            online = int(payload.get("online_count") or 0)
+            if not online:
+                online = int(payload.get("count") or 0)
+            if not online:
+                return
+            content = f"在线 {online} 人"
+            # 在线人数几秒一跳，30 秒内同值算重复
+            if self._stats_duplicate(content, window=30.0):
+                return
+            self.fetcher._emit_message(
+                DanmakuMessage(
+                    content=content,
+                    platform="bilibili",
+                    room_id=self.fetcher.room_id,
+                    msg_type=MessageType.STATS,
+                    extra={"online": online},
+                )
+            )
+        except Exception as exc:
+            logger.error("处理在线人数失败: %s", exc)
+
     async def handle(self, client: Any, command: Any) -> None:
         """blivedm 的 handler 入口：先摘出被 blivedm 忽略的命令，再走默认分派。
 
@@ -368,6 +510,15 @@ class _BiliHandler:  # pragma: no cover - 需要真实连接
                 return
             if base_cmd.startswith("LIKE_INFO"):
                 await self._on_like(client, data)
+                return
+            if base_cmd == "INTERACT_WORD_V2":
+                await self._on_interact_word_v2(client, data)
+                return
+            if base_cmd == "WATCHED_CHANGE":
+                await self._on_watched_change(client, data)
+                return
+            if base_cmd == "ONLINE_RANK_COUNT":
+                await self._on_online_rank_count(client, data)
                 return
         except Exception as exc:  # pragma: no cover - 防御
             logger.error("处理扩展命令 %s 失败: %s", base_cmd, exc)

@@ -25,10 +25,11 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from ..utils.logging_setup import get_logger
 from ..utils.paths import probe_writable as _probe_writable
+from . import secrets as _secrets
 from .models import AppConfig
 
 logger = get_logger("config.manager")
@@ -256,6 +257,7 @@ class ConfigManager:
                 logger.warning("筛选规则节类型不对（%s），使用默认规则", type(raw_filters).__name__)
 
         self.adopt_credentials()
+        self._decrypt_credentials()
 
         logger.info(
             "配置已加载: 键盘映射 %d 条, 鼠标映射 %d 条, 筛选规则 %d 条, 目录 %s",
@@ -309,8 +311,8 @@ class ConfigManager:
         connection = connection.get("connection") or {}
         if not isinstance(connection, Mapping):
             return None
-        cookie = str(connection.get("cookie") or "")
-        sessdata = str(connection.get("sessdata") or "")
+        cookie = _secrets.decrypt(str(connection.get("cookie") or ""))
+        sessdata = _secrets.decrypt(str(connection.get("sessdata") or ""))
         if not cookie.strip() and not sessdata.strip():
             return None
         return cookie, sessdata
@@ -376,12 +378,73 @@ class ConfigManager:
 
         payload = {
             "version": AppConfig.SCHEMA_VERSION,
-            "config": self.config.to_dict(),
+            "config": self._encrypted_config_dict(),
             "key_mappings": key_mappings_to_list(self.key_mappings),
             "mouse_mappings": mouse_mappings_to_list(self.mouse_mappings),
             "filters": [rule.to_dict() for rule in self.filters],
         }
         return self._write_json(self.settings_path, payload)
+
+    # ------------------------------------------------------------------
+    # 凭据加密（Windows DPAPI，见 config/secrets.py）
+    # ------------------------------------------------------------------
+
+    def _decrypt_credentials(self) -> None:
+        """把内存里的凭据从 ``dpapi:...`` 解回明文（就地改写）。"""
+        conn = self.config.connection
+        for field_name in ("cookie", "sessdata"):
+            value = getattr(conn, field_name, "") or ""
+            if not _secrets.is_encrypted(value):
+                continue
+            plain = _secrets.decrypt(value)
+            setattr(conn, field_name, plain)
+            if not plain:
+                logger.warning(
+                    "凭据 %s 解不开（换了机器/用户或文件损坏），按未登录处理，请重新扫码登录",
+                    field_name,
+                )
+
+    def _encrypted_config_dict(self) -> Dict[str, Any]:
+        """``config`` 节的落盘版本：两条凭据加密，其它字段原样。"""
+        data = self.config.to_dict()
+        connection = data.get("connection")
+        if isinstance(connection, dict):
+            for field_name in ("cookie", "sessdata"):
+                value = connection.get(field_name) or ""
+                connection[field_name] = _secrets.encrypt(str(value))
+        return data
+
+    def migrate_credentials(self) -> bool:
+        """把磁盘上的明文凭据改写成密文。
+
+        单独一个方法而不是塞进 :meth:`load`：``load()`` 可能在与用户无关的
+        场景里被调用（测试、自检脚本），静默改写用户文件不合适。启动流程里
+        显式调用一次即可（见 ``main.py``）。
+
+        :return: 是否真的改写了文件
+        """
+        if not _secrets.dpapi_available():
+            return False
+        raw = self._read_json(self.settings_path)
+        connection: Any = {}
+        if isinstance(raw, Mapping):
+            section = raw.get("config")
+            if isinstance(section, Mapping):
+                connection = section.get("connection") or {}
+        if not isinstance(connection, Mapping):
+            return False
+        pending = [
+            name
+            for name in ("cookie", "sessdata")
+            if str(connection.get(name) or "").strip()
+            and not _secrets.is_encrypted(str(connection.get(name) or ""))
+        ]
+        if not pending:
+            return False
+        saved = self.save()
+        if saved:
+            logger.info("已把明文凭据（%s）加密为 DPAPI 密文", "、".join(pending))
+        return saved
 
     def _write_json(self, path: Path, payload: Any) -> bool:
         """原子写：先写临时文件，再 ``os.replace``。

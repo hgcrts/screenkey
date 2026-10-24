@@ -1,0 +1,40 @@
+[
+  {
+    "cmd": "INTERACT_WORD_V2",
+    "data": {
+      "pb": "CMGaDBIM5rWL6K+V55So5oi3IgEBKAEw+YebCjiM3PDWBkDmws/gljR4ypS3t6Hs1vAY",
+      "dmscore": 4
+    }
+  },
+  {
+    "cmd": "INTERACT_WORD_V2",
+    "data": {
+      "pb": "CMKaDBIJ5YWz5rOo6ICFIgEBKAIw+YebCjiM3PDWBkDmws/gljR4ypS3t6Hs1vAY",
+      "dmscore": 4
+    }
+  },
+  {
+    "cmd": "INTERACT_WORD_V2",
+    "data": {
+      "pb": "CMOaDBIJ5YiG5Lqr6ICFIgEBKAMw+YebCjiM3PDWBkDmws/gljR4ypS3t6Hs1vAY",
+      "dmscore": 4
+    }
+  },
+  {
+    "cmd": "WATCHED_CHANGE",
+    "data": {
+      "num": 17757,
+      "text_small": "1.7万",
+      "text_large": "1.7万人看过"
+    }
+  },
+  {
+    "cmd": "ONLINE_RANK_COUNT",
+    "data": {
+      "count": 36,
+      "count_text": "36",
+      "online_count": 74,
+      "online_count_text": "74"
+    }
+  }
+]

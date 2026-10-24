@@ -472,6 +472,11 @@ def main(argv=None) -> int:
 
     manager = ConfigManager()
     manager.load()
+    # 明文凭据顺手升级成 DPAPI 密文（老配置第一次启动时生效；失败不影响使用）
+    try:
+        manager.migrate_credentials()
+    except Exception as exc:  # pragma: no cover - 防御性
+        logger.exception("凭据加密迁移失败（继续以明文使用）: %s", exc)
 
     window = MainWindow(config=manager.config, config_manager=manager)
     window.show()

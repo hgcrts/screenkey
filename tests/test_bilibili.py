@@ -660,3 +660,148 @@ class TestLoginStateProbe:
         assert warn_at != -1, "connect() 没有对失效 Cookie 发出任何提示"
         assert probe_at < warn_at, "提示必须出现在登录态探测之后"
         assert "掩码" in src or "游客" in src
+
+
+# ----------------------------------------------------------------------
+# N. INTERACT_WORD_V2 / 在线人数（2026-10 实测补的协议分支）
+# ----------------------------------------------------------------------
+
+FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "bilibili_frames.json"
+
+
+def base64_of(raw: bytes) -> str:
+    import base64
+
+    return base64.b64encode(raw).decode("ascii")
+
+
+class _FakeFetcher:
+    """只提供 handler 用得到的成员：``room_id`` 与 ``_emit_message``。"""
+
+    room_id = "21414905"
+
+    def __init__(self) -> None:
+        self.messages: list[Any] = []
+
+    def _emit_message(self, msg: Any) -> None:  # noqa: D102 - 测试替身
+        self.messages.append(msg)
+
+
+def _frames() -> dict[str, Any]:
+    import json
+
+    data = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    grouped: dict[str, Any] = {}
+    for item in data:
+        cmd = item["cmd"]
+        grouped.setdefault(cmd, []).append(item["data"])
+    return grouped
+
+
+class TestInteractWordV2AndStats:
+    """服务端已把进场换成 INTERACT_WORD_V2，blivedm 0.1.1 不认识它。
+
+    fixture 是按真实抓包（房间 21414905，2026-10-24）的字段结构**重新编码**的
+    匿名帧：1=uid 2=uname 4=identities(packed) 5=msg_type 6=room_id
+    7=秒 8=毫秒 15=msg_id。真实帧里的用户名是掩码且带真实头像 URL，故不落库。
+    """
+
+    def test_parse_enter(self, module):
+        parsed = module._parse_interact_word_v2(_frames()["INTERACT_WORD_V2"][0]["pb"])
+        assert parsed == {
+            "uid": 200001,
+            "uname": "测试用户",
+            "msg_type": 1,
+            "room_id": 21414905,
+            "timestamp": 1792814604,
+        }
+
+    def test_malformed_payload_returns_none(self, module):
+        for bad in (None, "", "!!!not-base64!!!", base64_of(b"\xff\xff\xff")):
+            assert module._parse_interact_word_v2(bad) is None
+
+    def test_handle_enter_emits_enter(self, module):
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        cmd = {"cmd": "INTERACT_WORD_V2", "data": _frames()["INTERACT_WORD_V2"][0]}
+        asyncio.run(handler.handle(None, cmd))
+        assert len(fetcher.messages) == 1
+        msg = fetcher.messages[0]
+        assert msg.msg_type.value == "enter"
+        assert msg.nickname == "测试用户"
+        assert msg.user_id == "200001"
+        assert msg.platform == "bilibili"
+
+    def test_handle_follow_emits_follow(self, module):
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        cmd = {"cmd": "INTERACT_WORD_V2", "data": _frames()["INTERACT_WORD_V2"][1]}
+        asyncio.run(handler.handle(None, cmd))
+        assert [m.msg_type.value for m in fetcher.messages] == ["follow"]
+        assert fetcher.messages[0].content == "关注了主播"
+
+    def test_handle_share_emits_system(self, module):
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        cmd = {"cmd": "INTERACT_WORD_V2", "data": _frames()["INTERACT_WORD_V2"][2]}
+        asyncio.run(handler.handle(None, cmd))
+        assert [m.msg_type.value for m in fetcher.messages] == ["system"]
+        assert fetcher.messages[0].content == "分享了直播间"
+
+    def test_handle_watched_change_emits_stats(self, module):
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        cmd = {"cmd": "WATCHED_CHANGE", "data": _frames()["WATCHED_CHANGE"][0]}
+        asyncio.run(handler.handle(None, cmd))
+        assert len(fetcher.messages) == 1
+        msg = fetcher.messages[0]
+        assert msg.msg_type.value == "stats"
+        assert msg.content == "看过 1.7万"
+        assert msg.extra["viewers"] == 17757
+
+    def test_handle_online_rank_count_emits_stats(self, module):
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        cmd = {"cmd": "ONLINE_RANK_COUNT", "data": _frames()["ONLINE_RANK_COUNT"][0]}
+        asyncio.run(handler.handle(None, cmd))
+        assert len(fetcher.messages) == 1
+        assert fetcher.messages[0].content == "在线 74 人"
+        assert fetcher.messages[0].extra["online"] == 74
+
+    def test_unknown_v2_msg_type_is_ignored(self, module):
+        """msg_type=9（协议里的其他互动）不应被当成进场。"""
+        from danmaku_kb.danmaku.protobuf_lite import encode_field_string, encode_field_varint
+
+        body = encode_field_varint(1, 1) + encode_field_string(2, "x") + encode_field_varint(5, 9)
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        cmd = {"cmd": "INTERACT_WORD_V2", "data": {"pb": base64_of(body)}}
+        asyncio.run(handler.handle(None, cmd))
+        assert fetcher.messages == []
+
+    def test_empty_stats_are_ignored(self, module):
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        for cmd in (
+            {"cmd": "WATCHED_CHANGE", "data": {}},
+            {"cmd": "ONLINE_RANK_COUNT", "data": {}},
+        ):
+            asyncio.run(handler.handle(None, cmd))
+        assert fetcher.messages == []
+
+    def test_duplicate_stats_suppressed(self, module):
+        """同一文案 15 秒内只发一次：服务端约 5s 推一次，重复会把列表刷屏。"""
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        cmd = {"cmd": "ONLINE_RANK_COUNT", "data": _frames()["ONLINE_RANK_COUNT"][0]}
+        asyncio.run(handler.handle(None, cmd))
+        asyncio.run(handler.handle(None, cmd))
+        assert len(fetcher.messages) == 1
+
+    def test_stats_change_is_not_suppressed(self, module):
+        fetcher = _FakeFetcher()
+        handler = module._BiliHandler(fetcher)
+        for online in (74, 75):
+            data = {"count": 1, "online_count": online}
+            asyncio.run(handler.handle(None, {"cmd": "ONLINE_RANK_COUNT", "data": data}))
+        assert [m.content for m in fetcher.messages] == ["在线 74 人", "在线 75 人"]
