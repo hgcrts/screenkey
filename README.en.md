@@ -50,7 +50,7 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 | --- | --- |
 | OS | Windows 10 / 11, x64 (injection uses `SendInput`; Linux/macOS unsupported) |
 | Python | 3.11+ (source runs only) |
-| Douyin | Local Node.js required (the `signature` parameter cannot be reproduced in pure Python) |
+| Douyin | No extra dependency (the JS signing runtime is bundled in the release) |
 | Bilibili | No extra dependency; nicknames show in full when logged in |
 
 ## Documentation

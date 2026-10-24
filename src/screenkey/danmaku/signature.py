@@ -30,6 +30,7 @@ import atexit
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -146,8 +147,42 @@ class SignatureUnavailable(RuntimeError):
     """无法计算签名（缺 node / 缺 JS / 进程起不来）。"""
 
 
+def _bundled_node() -> Optional[Path]:
+    """随包分发的 node 运行时位置；没打包时返回 None。
+
+    PyInstaller onedir 把数据文件放在 ``_internal`` 下，onefile 解压到
+    ``sys._MEIPASS``。两种都查，另外兼容"用户把 node 目录直接丢在
+    exe 旁边"这种手工部署。
+    """
+    candidates: List[Path] = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(Path(meipass) / "node" / "node.exe")
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        candidates.append(exe_dir / "_internal" / "node" / "node.exe")
+        candidates.append(exe_dir / "node" / "node.exe")
+    # 源码/开发态：构建脚本把运行时放在 build/node-runtime/
+    candidates.append(
+        (_PACKAGE_DATA.parent.parent.parent / "build" / "node-runtime" / "node.exe").resolve()
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def find_node() -> Optional[str]:
-    """找到 node 可执行文件；找不到返回 None。"""
+    """找到 node 可执行文件；找不到返回 None。
+
+    查找顺序：随包运行时 → ``SCREENKEY_NODE`` 覆盖 → PATH。
+    随包运行时放第一位：用户机器上装着旧版 node 时，也不该改变
+    本程序验证过的签名行为。
+    """
+    bundled = _bundled_node()
+    if bundled is not None:
+        return str(bundled)
+
     override = (
         os.environ.get(ENV_NODE, "") or os.environ.get(ENV_NODE_LEGACY, "")
     ).strip()
@@ -213,7 +248,9 @@ def availability_report() -> Dict[str, object]:
     sign_js = find_sign_js()
     reasons: List[str] = []
     if node is None:
-        reasons.append("未找到 node（请安装 Node.js，或设置 %s）" % ENV_NODE)
+        reasons.append(
+            "未找到可用的 JS 运行时（打包版已内置；源码运行可用 %s 指定）" % ENV_NODE
+        )
     if sign_js is None:
         reasons.append("未找到 sign.js（请设置 %s）" % ENV_SIGN_JS)
     return {

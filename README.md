@@ -50,7 +50,7 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 | --- | --- |
 | 系统 | Windows 10 / 11，x64（注入依赖 `SendInput`，Linux/macOS 不支持） |
 | Python | 3.11+（仅源码运行需要） |
-| 抖音 | 需要本地 Node.js（签名参数无法用纯 Python 复现） |
+| 抖音 | 无额外依赖（签名用的 JS 运行时已内置在发布包中） |
 | B站 | 无额外依赖；登录状态下昵称完整显示 |
 
 ## 文档

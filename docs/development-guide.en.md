@@ -36,7 +36,7 @@ fetch danmaku  →  filter rules  →  map to keys  →  inject input
 
 - **Fetch layer** — Bilibili over `blivedm`; Douyin over a hand-written
   `protobuf_lite` + `websockets` client whose `signature` parameter is computed by a
-  resident Node.js process running Douyin's own obfuscated JS.
+  resident JS runtime bundled with the release, running Douyin's own obfuscated JS.
 - **UI layer** — a single PyQt5 window with four tabs (Connection / Mapping / Options / Log)
   plus a floating danmaku window.
 - **Actuator layer** — Win32 `SendInput` / `keybd_event`; "game mode" switches to hardware
@@ -51,7 +51,7 @@ Fetching runs on a background thread and injection deliberately runs on another 
 
 | Capability | Notes |
 | --- | --- |
-| **Real Douyin danmaku** | WebSocket + hand-written protobuf + local Node.js `signature`. Requires Node.js installed. |
+| **Real Douyin danmaku** | WebSocket + hand-written protobuf + bundled JS runtime for `signature`. Nothing to install. |
 | **Bilibili danmaku** | `blivedm` + built-in WBI signer (`danmaku/bilibili_wbi.py`); QR-code login (`login/bilibili_qr.py`); parses `INTERACT_WORD_V2` (enter/follow), `ONLINE_RANK_COUNT` and `WATCHED_CHANGE` (viewer counts) itself. |
 | **Ordered filter rules** | First match wins; `ALLOW` / `DROP` / `DISPLAY_ONLY` / `REWRITE`. |
 | **Key & mouse mapping** | Exact / contains / prefix / regex / "sensing" (repeated characters → hold). Hold actions have a configurable duration. |
@@ -74,7 +74,7 @@ enter, esc, number keys, `q/e/r/f`, left/right click, wheel …).
 | --- | --- |
 | OS | **Windows 10 / 11** (input injection is pure Win32) |
 | Python | **3.12** (developed and verified on `3.12.10`) |
-| Node.js | **Douyin only** — computes the WebSocket `signature`. Not needed for Bilibili or simulation. |
+| JS runtime | **Douyin only** — computes the WebSocket `signature`. Bundled in the release; nothing to install. |
 | Bilibili SESSDATA | Optional: guest mode still receives danmaku. |
 | Douyin cookie | Optional: can connect without it, a real cookie improves the success rate. |
 
@@ -167,7 +167,8 @@ remaining 25 spawn child processes and fail inside restricted sandboxes.
 
 ## Known limitations
 
-1. **Douyin needs Node.js** — the `signature` parameter cannot be reproduced in pure Python.
+1. **Douyin signing needs a JS runtime** — the `signature` parameter cannot be reproduced in pure Python.
+   The release bundles one; running from source requires `node` on PATH or `SCREENKEY_NODE`.
    Without it the connection is dropped with code `1006` in ~155 ms, and the program says so.
 2. **Douyin rooms are often silent** — no messages ≠ broken connection.
 3. **Bilibili masking when logged out** — the server masks nicknames (`伊***`) for guests;

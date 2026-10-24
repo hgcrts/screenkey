@@ -22,6 +22,8 @@
 所以这里的 datas 目标目录必须写成 ``screenkey/data``，两边才对得上。
 """
 
+import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -39,6 +41,49 @@ datas = [
     # 应用图标（窗口图标在运行时读 PNG；exe 图标由 EXE(icon=...) 嵌入）
     (str(PKG / "assets" / "icon.png"), "screenkey/assets"),
 ]
+
+# ----------------------------------------------------------------------
+# 随包携带的 node 运行时（抖音签名要用）
+# ----------------------------------------------------------------------
+# 抖音的 signature 必须由 JS 现场算，``sign.js`` 只能跑在 JS 引擎里。
+# 以前要求用户自己装 Node.js；现在把官方 node.exe 一起打包，
+# 做到「解压双击就能用」。不必装 Node、也不必配 PATH。
+#
+# 构建时按顺序找 node.exe：
+#   1. build/node-runtime/node.exe（第一次构建时自动缓存，重打包不再复制）
+#   2. %ProgramFiles%\nodejs\node.exe（本机装的 Node.js）
+#   3. PATH 里的 node.exe
+# 都找不到时打警告并跳过：程序仍能打包，只是抖音会明确报「缺 JS 运行时」。
+NODE_STAGE = ROOT / "build" / "node-runtime"
+
+
+def _stage_node() -> "Path | None":
+    target = NODE_STAGE / "node.exe"
+    if target.is_file():
+        return target
+
+    candidates = []
+    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+    candidates.append(Path(program_files) / "nodejs" / "node.exe")
+    found = shutil.which("node.exe") or shutil.which("node")
+    if found:
+        candidates.append(Path(found))
+
+    for source in candidates:
+        if source.is_file():
+            NODE_STAGE.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            print("[spec] 已内置 node 运行时: %s -> %s" % (source, target))
+            return target
+
+    print("[spec] 警告: 未找到 node.exe，打包产物将缺少抖音签名运行时")
+    return None
+
+
+_NODE_RUNTIME = _stage_node()
+if _NODE_RUNTIME is not None:
+    # 打包到 _internal/node/node.exe；signature._bundled_node() 按这个路径找
+    datas.append((str(_NODE_RUNTIME), "node"))
 
 # ----------------------------------------------------------------------
 # 动态导入、插件式后端：静态分析扫不到的，显式列出来
