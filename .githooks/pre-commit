@@ -12,12 +12,12 @@
 
 set -e
 
-if command -v python >/dev/null 2>&1; then
-    PY=python
-elif [ -x ".venv/Scripts/python.exe" ]; then
+if [ -x ".venv/Scripts/python.exe" ]; then
     PY=".venv/Scripts/python.exe"
 elif [ -x ".venv/bin/python" ]; then
     PY=".venv/bin/python"
+elif command -v python >/dev/null 2>&1; then
+    PY=python
 else
     echo "[pre-commit] 找不到 python，跳过检查" >&2
     exit 0

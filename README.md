@@ -60,7 +60,7 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 | 现在到底能做什么、验证到什么程度 | [docs/项目现状.md](docs/项目现状.md) |
 | 代码怎么分层、线程怎么跑 | [docs/架构.md](docs/架构.md) |
 | 安装细节、CLI、配置项、测试怎么跑 | [docs/开发文档.md](docs/开发文档.md) |
-| 出问题了 | [docs/故障排查.md](docs/故障排查.md) |
+| 出问题了 | [docs/开发文档.md 的常见问题](docs/开发文档.md#常见问题) |
 
 ## 许可证
 

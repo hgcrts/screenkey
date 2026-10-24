@@ -62,7 +62,7 @@ All long-form docs are in Chinese today:
 | What works, with what evidence | [docs/项目现状.md](docs/项目现状.md) |
 | Architecture and threading | [docs/架构.md](docs/架构.md) |
 | Install details, CLI, config, tests | [docs/development-guide.en.md](docs/development-guide.en.md) |
-| Troubleshooting | [docs/故障排查.md](docs/故障排查.md) |
+| Troubleshooting | [FAQ in docs/开发文档.md](docs/开发文档.md#常见问题) |
 
 ## License
 
