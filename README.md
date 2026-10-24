@@ -25,7 +25,7 @@
 
 **不想装 Python**：直接下打包版，解压双击 `ScreenKey.exe`。
 
-➡️ **[ScreenKey-v3.0.0-win64.zip](https://github.com/hgcrts/screenkey/releases/latest)**（约 43 MB，SHA-256 见 Release 页）
+➡️ **[ScreenKey-v3.0.1-win64.zip](https://github.com/hgcrts/screenkey/releases/latest)**（约 76 MB，已内置 Node 运行时，SHA-256 见 Release 页）
 
 **想改代码**：
 
